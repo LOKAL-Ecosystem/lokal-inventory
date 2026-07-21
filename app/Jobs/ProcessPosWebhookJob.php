@@ -93,34 +93,51 @@ class ProcessPosWebhookJob implements ShouldQueue
                 continue;
             }
 
-            // Search BOM / Recipes for this POS product_id
-            $recipes = Recipe::with('stockItem')->where('pos_product_id', $productId)->get();
+            $modifierIds = [];
+            $rawModifiers = $orderItem['modifier_ids'] ?? $orderItem['modifiers'] ?? [];
+            if (is_array($rawModifiers)) {
+                foreach ($rawModifiers as $m) {
+                    if (is_array($m)) {
+                        $modifierIds[] = $m['id'] ?? $m['pos_modifier_id'] ?? null;
+                    } elseif (is_object($m)) {
+                        $modifierIds[] = $m->id ?? $m->pos_modifier_id ?? null;
+                    } else {
+                        $modifierIds[] = $m;
+                    }
+                }
+            }
+            $modifierIds = array_filter(array_map('intval', $modifierIds));
 
-            if ($recipes->isEmpty()) {
-                // Recipe not found -> Log warning & record in unmapped_products table
-                Log::warning("Unmapped product received in POS Order webhook. No recipe found for product_id: {$productId} ({$productName})");
+            // Instantiate calculator service
+            $calculator = app(\App\Services\RecipeCalculatorService::class);
+            $deductions = $calculator->calculateDeduction($productId, $orderQty, $modifierIds);
 
-                UnmappedProduct::updateOrCreate(
-                    ['pos_product_id' => $productId],
-                    [
-                        'product_name' => $productName,
-                        'last_transaction_id' => (string) $transactionId,
-                        'occurrence_count' => DB::raw('occurrence_count + 1'),
-                        'last_seen_at' => now(),
-                    ]
-                );
+            if (empty($deductions)) {
+                // If there's no base recipe or modifier recipe, record as unmapped
+                $recipeExists = Recipe::where('pos_product_id', $productId)->exists();
+                if (!$recipeExists) {
+                    Log::warning("Unmapped product received in POS Order webhook. No recipe found for product_id: {$productId} ({$productName})");
 
+                    UnmappedProduct::updateOrCreate(
+                        ['pos_product_id' => $productId],
+                        [
+                            'product_name' => $productName,
+                            'last_transaction_id' => (string) $transactionId,
+                            'occurrence_count' => DB::raw('occurrence_count + 1'),
+                            'last_seen_at' => now(),
+                        ]
+                    );
+                }
                 continue;
             }
 
-            // Deduct stock for each raw ingredient in the recipe
-            foreach ($recipes as $recipe) {
-                $stockItem = $recipe->stockItem;
+            // Deduct stock for each raw ingredient determined by RecipeCalculatorService
+            foreach ($deductions as $stockItemId => $qtyDeducted) {
+                $stockItem = Item::find($stockItemId);
                 if (!$stockItem) {
                     continue;
                 }
 
-                $qtyDeducted = $recipe->quantity_needed * $orderQty;
                 $quantityBefore = (float) $stockItem->quantity_on_hand;
                 $quantityAfter = $quantityBefore - $qtyDeducted;
 
@@ -137,7 +154,7 @@ class ProcessPosWebhookJob implements ShouldQueue
                     'quantity_change' => -$qtyDeducted,
                     'quantity_after' => $quantityAfter,
                     'reference_no' => (string) $transactionId,
-                    'description' => "POS Order Deduction: {$productName} (x{$orderQty}) via Webhook",
+                    'description' => "POS Order Deduction: {$productName} (x{$orderQty}) via Webhook" . (empty($modifierIds) ? "" : " [Modifiers: " . implode(',', $modifierIds) . "]"),
                 ]);
 
                 // Check for negative stock warning

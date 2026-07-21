@@ -55,4 +55,11 @@ Route::middleware(['web'])->group(function () {
     Route::get('webhooks', [\App\Http\Controllers\WebhookMonitoringController::class, 'index'])->name('webhooks.index');
     Route::get('webhooks/unmapped', [\App\Http\Controllers\WebhookMonitoringController::class, 'unmapped'])->name('webhooks.unmapped');
     Route::post('webhooks/recipe', [\App\Http\Controllers\WebhookMonitoringController::class, 'storeRecipe'])->name('webhooks.recipe.store');
+
+    // Recipes & Modifiers Management
+    Route::get('recipes', [\App\Http\Controllers\RecipeController::class, 'index'])->name('recipes.index');
+    Route::get('recipes/{pos_product_id}', [\App\Http\Controllers\RecipeController::class, 'show'])->name('recipes.show');
+    Route::post('recipes/{pos_product_id}/adjustments', [\App\Http\Controllers\RecipeController::class, 'storeAdjustment'])->name('recipes.adjustments.store');
+    Route::delete('recipes/adjustments/{adjustment}', [\App\Http\Controllers\RecipeController::class, 'destroyAdjustment'])->name('recipes.adjustments.destroy');
+    Route::post('recipes/{pos_product_id}/preview', [\App\Http\Controllers\RecipeController::class, 'preview'])->name('recipes.preview');
 });

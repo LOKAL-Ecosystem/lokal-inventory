@@ -241,6 +241,12 @@
                         <div class="pt-4 pb-1.5 px-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Webhook & Resep BOM</div>
 
                         <li>
+                            <a href="{{ route('recipes.index') }}" class="{{ request()->routeIs('recipes.*') ? 'bg-primary/10 text-primary font-extrabold border-l-4 border-primary rounded-l-none' : 'hover:bg-base-200 text-gray-600 hover:text-neutral' }} flex items-center gap-3 px-3 py-2.5 transition-all">
+                                <i data-lucide="chef-hat" class="w-4.5 h-4.5 text-primary"></i>
+                                Resep / BOM
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('webhooks.index') }}" class="{{ request()->routeIs('webhooks.index') ? 'bg-primary/10 text-primary font-extrabold border-l-4 border-primary rounded-l-none' : 'hover:bg-base-200 text-gray-600 hover:text-neutral' }} flex items-center gap-3 px-3 py-2.5 transition-all">
                                 <i data-lucide="activity" class="w-4.5 h-4.5 text-info"></i>
                                 Riwayat Webhook
