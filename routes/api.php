@@ -25,10 +25,14 @@ Route::prefix('v1/pos')->group(function () {
 /*
 |--------------------------------------------------------------------------
 | Webhook Receiver Routes (Protected by HMAC Signature Verification)
+| Supports both /api/webhooks/pos and /api/v1/webhooks/pos
 |--------------------------------------------------------------------------
 */
-Route::prefix('webhooks/pos')->middleware(VerifyWebhookSignature::class)->group(function () {
+$webhookRoutes = function () {
     Route::post('/order-completed', [PosWebhookController::class, 'handleOrderCompleted'])->name('api.webhooks.pos.order-completed');
     Route::post('/stock-adjusted', [PosWebhookController::class, 'handleStockAdjusted'])->name('api.webhooks.pos.stock-adjusted');
     Route::post('/', [PosWebhookController::class, 'handleGenericWebhook'])->name('api.webhooks.pos.generic');
-});
+};
+
+Route::prefix('webhooks/pos')->middleware(VerifyWebhookSignature::class)->group($webhookRoutes);
+Route::prefix('v1/webhooks/pos')->middleware(VerifyWebhookSignature::class)->group($webhookRoutes);
