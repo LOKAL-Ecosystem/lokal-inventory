@@ -50,4 +50,9 @@ Route::middleware(['web'])->group(function () {
 
     Route::get('pos-integration', [PosIntegrationController::class, 'index'])->name('pos-integration.index');
     Route::post('pos-integration/mapping', [PosIntegrationController::class, 'updateMapping'])->name('pos-integration.update-mapping');
+
+    // Webhook Monitoring & Recipe (BOM) Management
+    Route::get('webhooks', [\App\Http\Controllers\WebhookMonitoringController::class, 'index'])->name('webhooks.index');
+    Route::get('webhooks/unmapped', [\App\Http\Controllers\WebhookMonitoringController::class, 'unmapped'])->name('webhooks.unmapped');
+    Route::post('webhooks/recipe', [\App\Http\Controllers\WebhookMonitoringController::class, 'storeRecipe'])->name('webhooks.recipe.store');
 });
