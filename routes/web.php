@@ -1,14 +1,16 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\StockInController;
-use App\Http\Controllers\StockAdjustmentController;
-use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\OpnameController;
+use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\PosIntegrationController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StockReceiptController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\WasteController;
+use App\Http\Controllers\Webhooks\LokalPosWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,49 +19,60 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Auto-login mock user for smooth testing/demo if unauthenticated
-Route::get('/login-dev', function () {
-    $user = \App\Models\User::firstOrCreate(
-        ['email' => 'admin@lokal.id'],
-        ['name' => 'Admin Inventory', 'password' => bcrypt('password'), 'role' => 'admin']
-    );
-    Auth::login($user);
-    return redirect('/');
+// Penerima webhook Lokal POS (tanpa CSRF, diverifikasi lewat signature).
+Route::post('webhooks/lokal-pos', LokalPosWebhookController::class)->name('webhooks.lokal-pos');
+
+Route::middleware('guest')->group(function () {
+    Route::get('login', [LoginController::class, 'create'])->name('login');
+    Route::post('login', [LoginController::class, 'store'])->middleware('throttle:10,1');
 });
 
-Route::middleware(['web'])->group(function () {
-    // Ensure demo user is logged in for seamless presentation
-    Route::get('/', function() {
-        if (!Auth::check()) {
-            $user = \App\Models\User::first();
-            if ($user) Auth::login($user);
-        }
-        return app(DashboardController::class)->index();
-    })->name('dashboard');
+Route::middleware('auth')->group(function () {
+    Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
-    Route::resource('items', ItemController::class)->except(['create', 'edit', 'show']);
-    Route::resource('suppliers', SupplierController::class)->except(['create', 'edit', 'show']);
+    Route::get('/', DashboardController::class)->name('dashboard');
 
-    Route::resource('stock-in', StockInController::class)->only(['index', 'create', 'store']);
+    // Bahan baku: semua peran boleh melihat; hanya pemilik yang mengubah.
+    Route::get('ingredients', [IngredientController::class, 'index'])->name('ingredients.index');
+    Route::get('ingredients/{ingredient}', [IngredientController::class, 'show'])->name('ingredients.show');
+    Route::middleware('can:manage-inventory')->group(function () {
+        Route::post('ingredients', [IngredientController::class, 'store'])->name('ingredients.store');
+        Route::put('ingredients/{ingredient}', [IngredientController::class, 'update'])->name('ingredients.update');
+        Route::delete('ingredients/{ingredient}', [IngredientController::class, 'destroy'])->name('ingredients.destroy');
 
-    Route::resource('adjustments', StockAdjustmentController::class)->only(['index', 'create', 'store']);
-    Route::post('adjustments/{adjustment}/approve', [StockAdjustmentController::class, 'approve'])->name('adjustments.approve');
+        Route::resource('suppliers', SupplierController::class)->except(['create', 'edit', 'show']);
 
-    Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');
-    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('recipes', [RecipeController::class, 'index'])->name('recipes.index');
+        Route::get('recipes/{posProductId}', [RecipeController::class, 'show'])->whereNumber('posProductId')->name('recipes.show');
+        Route::put('recipes/{posProductId}', [RecipeController::class, 'update'])->whereNumber('posProductId')->name('recipes.update');
+        Route::post('recipes/{posProductId}/adjustments', [RecipeController::class, 'storeAdjustment'])->whereNumber('posProductId')->name('recipes.adjustments.store');
+        Route::delete('recipes/adjustments/{adjustment}', [RecipeController::class, 'destroyAdjustment'])->name('recipes.adjustments.destroy');
+        Route::get('recipes/{posProductId}/preview', [RecipeController::class, 'preview'])->whereNumber('posProductId')->name('recipes.preview');
 
-    Route::get('pos-integration', [PosIntegrationController::class, 'index'])->name('pos-integration.index');
-    Route::post('pos-integration/mapping', [PosIntegrationController::class, 'updateMapping'])->name('pos-integration.update-mapping');
+        Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/test', [SettingsController::class, 'test'])->name('settings.test');
+        Route::post('settings/sync', [SettingsController::class, 'sync'])->name('settings.sync');
+        Route::post('settings/inbox/{inbox}/retry', [SettingsController::class, 'retry'])->name('settings.inbox.retry');
+    });
 
-    // Webhook Monitoring & Recipe (BOM) Management
-    Route::get('webhooks', [\App\Http\Controllers\WebhookMonitoringController::class, 'index'])->name('webhooks.index');
-    Route::get('webhooks/unmapped', [\App\Http\Controllers\WebhookMonitoringController::class, 'unmapped'])->name('webhooks.unmapped');
-    Route::post('webhooks/recipe', [\App\Http\Controllers\WebhookMonitoringController::class, 'storeRecipe'])->name('webhooks.recipe.store');
+    // Stok masuk, waste, opname: pemilik & kasir.
+    Route::get('stock-receipts', [StockReceiptController::class, 'index'])->name('stock-receipts.index');
+    Route::get('stock-receipts/create', [StockReceiptController::class, 'create'])->name('stock-receipts.create');
+    Route::post('stock-receipts', [StockReceiptController::class, 'store'])->name('stock-receipts.store');
+    Route::get('stock-receipts/{receipt}', [StockReceiptController::class, 'show'])->name('stock-receipts.show');
 
-    // Recipes & Modifiers Management
-    Route::get('recipes', [\App\Http\Controllers\RecipeController::class, 'index'])->name('recipes.index');
-    Route::get('recipes/{pos_product_id}', [\App\Http\Controllers\RecipeController::class, 'show'])->name('recipes.show');
-    Route::post('recipes/{pos_product_id}/adjustments', [\App\Http\Controllers\RecipeController::class, 'storeAdjustment'])->name('recipes.adjustments.store');
-    Route::delete('recipes/adjustments/{adjustment}', [\App\Http\Controllers\RecipeController::class, 'destroyAdjustment'])->name('recipes.adjustments.destroy');
-    Route::post('recipes/{pos_product_id}/preview', [\App\Http\Controllers\RecipeController::class, 'preview'])->name('recipes.preview');
+    Route::get('waste', [WasteController::class, 'index'])->name('waste.index');
+    Route::post('waste', [WasteController::class, 'store'])->name('waste.store');
+
+    Route::get('opnames', [OpnameController::class, 'index'])->name('opnames.index');
+    Route::post('opnames', [OpnameController::class, 'store'])->name('opnames.store');
+    Route::get('opnames/{opname}', [OpnameController::class, 'show'])->name('opnames.show');
+    Route::put('opnames/{opname}', [OpnameController::class, 'update'])->name('opnames.update');
+    Route::post('opnames/{opname}/complete', [OpnameController::class, 'complete'])->middleware('can:complete-opname')->name('opnames.complete');
+
+    Route::middleware('can:view-costs')->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    });
 });

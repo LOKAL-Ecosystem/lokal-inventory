@@ -3,215 +3,115 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<!-- Page Header -->
-<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-base-300/60 pb-5">
-    <div>
-        <h1 class="text-2xl font-extrabold text-neutral tracking-tight">Ringkasan Stok & Inventori</h1>
-        <p class="text-xs text-gray-500 font-medium mt-1">Pantau ketersediaan bahan baku, mutasi transaksi terkini, dan peringatan stok kritis secara real-time.</p>
-    </div>
-    <div class="flex items-center gap-2.5">
-        <a href="{{ route('stock-in.create') }}" class="btn btn-primary text-white btn-sm flex items-center gap-2 shadow-xs rounded-lg px-4">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            Tambah Stock In
-        </a>
-        <a href="{{ route('adjustments.create') }}" class="btn btn-outline border-base-300 hover:bg-base-200 text-neutral btn-sm flex items-center gap-2 rounded-lg px-4">
-            <i data-lucide="sliders" class="w-4 h-4 text-warning"></i>
-            Opname Stok
-        </a>
-    </div>
-</header>
+<x-page-header title="Dashboard" :subtitle="'Ringkasan stok ' . $outlet->name">
+    <x-slot:actions>
+        <a href="{{ route('stock-receipts.create') }}" class="btn btn-primary btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Catat Stok Masuk</a>
+        <a href="{{ route('waste.index') }}" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Waste</a>
+    </x-slot:actions>
+</x-page-header>
 
-<!-- Metrics Grid -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-    <!-- Stat 1 -->
-    <div class="card-premium p-5 flex flex-row items-center justify-between relative overflow-hidden group">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Item Stok</div>
-            <div class="text-3xl font-black text-neutral tracking-tight">{{ number_format($totalItems) }}</div>
-            <div class="text-[11px] text-gray-500 font-medium">Bahan & produk terdaftar</div>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-xs border border-primary/20 group-hover:scale-110 transition-transform">
-            <i data-lucide="package" class="w-6 h-6"></i>
-        </div>
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Hampir habis</div>
+        <div class="text-3xl font-extrabold {{ $lowStockCount ? 'text-warning' : 'text-success' }} mt-1">{{ $lowStockCount }}</div>
     </div>
-
-    <!-- Stat 2 -->
-    <div class="card-premium p-5 flex flex-row items-center justify-between relative overflow-hidden group">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Valuasi Stok</div>
-            <div class="text-xl font-black text-neutral tracking-tight">Rp {{ number_format($totalValuation, 0, ',', '.') }}</div>
-            <div class="text-[11px] text-gray-500 font-medium">Total modal HPP fisik</div>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center font-bold shadow-xs border border-success/20 group-hover:scale-110 transition-transform">
-            <i data-lucide="wallet" class="w-6 h-6"></i>
-        </div>
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Stok negatif</div>
+        <div class="text-3xl font-extrabold {{ $negativeStock->count() ? 'text-error' : 'text-success' }} mt-1">{{ $negativeStock->count() }}</div>
     </div>
-
-    <!-- Stat 3 -->
-    <div class="card-premium p-5 flex flex-row items-center justify-between relative overflow-hidden group {{ count($lowStockItems) > 0 ? 'border-error/40 bg-error/5' : '' }}">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Item Low Stock</div>
-            <div class="text-3xl font-black text-error tracking-tight">{{ number_format(count($lowStockItems)) }}</div>
-            <div class="text-[11px] text-error font-semibold">Di bawah threshold min.</div>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-error/10 text-error flex items-center justify-center font-bold shadow-xs border border-error/20 group-hover:scale-110 transition-transform">
-            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-        </div>
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Menu tanpa resep</div>
+        <div class="text-3xl font-extrabold {{ $noRecipe->count() ? 'text-warning' : 'text-success' }} mt-1">{{ $noRecipe->count() }}</div>
     </div>
-
-    <!-- Stat 4 -->
-    <div class="card-premium p-5 flex flex-row items-center justify-between relative overflow-hidden group">
-        <div class="space-y-1">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Supplier</div>
-            <div class="text-3xl font-black text-neutral tracking-tight">{{ number_format($totalSuppliers) }}</div>
-            <div class="text-[11px] text-gray-500 font-medium">Pemasok bahan aktif</div>
+    @can('view-costs')
+        <div class="card-premium p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Nilai stok</div>
+            <div class="text-2xl font-extrabold text-neutral mt-1">Rp {{ number_format($stockValue, 0, ',', '.') }}</div>
         </div>
-        <div class="w-12 h-12 rounded-xl bg-neutral/10 text-neutral flex items-center justify-center font-bold shadow-xs border border-neutral/20 group-hover:scale-110 transition-transform">
-            <i data-lucide="truck" class="w-6 h-6"></i>
+    @else
+        <div class="card-premium p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Menu habis otomatis</div>
+            <div class="text-3xl font-extrabold {{ $soldOut->count() ? 'text-error' : 'text-success' }} mt-1">{{ $soldOut->count() }}</div>
         </div>
-    </div>
+    @endcan
 </section>
 
-<!-- Low Stock Alert Banner & Table -->
-@if(count($lowStockItems) > 0)
-<div class="card-premium border-error/30 p-6 space-y-4 shadow-sm bg-gradient-to-r from-error/5 via-base-100 to-base-100">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-            <div class="p-2.5 rounded-lg bg-error text-white font-bold shadow-xs">
-                <i data-lucide="alert-circle" class="w-5 h-5"></i>
-            </div>
-            <div>
-                <h2 class="text-base font-extrabold text-error">
-                    Peringatan Kritis: {{ count($lowStockItems) }} Item Perlu Restock Segera!
-                </h2>
-                <p class="text-xs text-gray-500">Stok fisik saat ini berada di bawah batas minimal ketersediaan.</p>
-            </div>
-        </div>
-        <a href="{{ route('stock-in.create') }}" class="btn btn-error text-white btn-sm px-5 rounded-lg shadow-xs font-semibold">
-            Input Restock Pembelian
-        </a>
-    </div>
-    <div class="overflow-x-auto rounded-lg border border-error/20 bg-base-100">
+<section class="card-premium p-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold">
+    <span class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full {{ $outlet->hasPosConnection() ? 'bg-success' : 'bg-warning' }}"></span>
+        Koneksi Lokal POS: {{ $outlet->hasPosConnection() ? 'terhubung' : 'belum diatur' }}
+    </span>
+    <span>Sinkron katalog: {{ $outlet->last_catalog_sync_at?->diffForHumans() ?? 'belum pernah' }}</span>
+    <span>Rekonsiliasi pesanan: {{ $outlet->last_reconciled_at?->diffForHumans() ?? 'belum pernah' }}</span>
+    <span class="{{ $failedEvents ? 'text-error' : '' }}">Event webhook tertunda: {{ $pendingEvents }}{{ $failedEvents ? " ({$failedEvents} gagal)" : '' }}</span>
+</section>
+
+<div class="grid lg:grid-cols-2 gap-6">
+    <section class="card-premium overflow-hidden">
+        <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Bahan hampir habis</h2>
         <table class="table-premium">
-            <thead>
-                <tr>
-                    <th>SKU / Code</th>
-                    <th>Nama Item Stok</th>
-                    <th>Kategori</th>
-                    <th class="text-right">Stok Fisik</th>
-                    <th class="text-right">Min Threshold</th>
-                    <th class="text-center">Status</th>
-                </tr>
-            </thead>
             <tbody>
-                @foreach($lowStockItems as $item)
-                <tr>
-                    <td class="font-mono text-xs font-bold text-gray-500">{{ $item->sku }}</td>
-                    <td class="font-bold text-neutral">{{ $item->name }}</td>
-                    <td><span class="badge badge-ghost badge-sm text-gray-500 font-semibold">{{ $item->category?->name ?? '-' }}</span></td>
-                    <td class="text-right font-black text-sm text-error">
-                        {{ number_format($item->quantity_on_hand, 2) }} <span class="text-xs font-medium text-gray-400">{{ $item->unit?->symbol }}</span>
-                    </td>
-                    <td class="text-right text-xs text-gray-500 font-semibold">
-                        {{ number_format($item->minimum_stock, 2) }} {{ $item->unit?->symbol }}
-                    </td>
-                    <td class="text-center">
-                        <span class="badge badge-error text-white badge-sm font-bold shadow-xs">Low Stock</span>
-                    </td>
-                </tr>
-                @endforeach
+                @forelse($lowStock as $item)
+                    <tr>
+                        <td><a href="{{ route('ingredients.show', $item) }}" class="font-bold text-neutral hover:text-primary">{{ $item->name }}</a></td>
+                        <td class="text-right text-xs text-base-content/60">min {{ $item->formatQty($item->min_stock) }}</td>
+                        <td class="text-right"><span class="badge {{ $item->isNegative() ? 'badge-error' : 'badge-warning' }} font-bold">{{ $item->formatQty($item->current_stock) }}</span></td>
+                    </tr>
+                @empty
+                    <tr><td class="text-center py-8 text-xs text-base-content/50">Semua stok aman.</td></tr>
+                @endforelse
             </tbody>
         </table>
-    </div>
-</div>
-@endif
+    </section>
 
-<!-- Recent Activity Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Mutasi Stok Terbaru -->
-    <div class="card-premium p-6 space-y-4">
-        <div class="flex justify-between items-center border-b border-base-200 pb-3">
-            <h2 class="text-base font-bold text-neutral flex items-center gap-2">
-                <i data-lucide="activity" class="w-4.5 h-4.5 text-primary"></i>
-                Riwayat Mutasi Terakhir
-            </h2>
-            <a href="{{ route('movements.index') }}" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-                Lihat Semua <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </a>
-        </div>
-        <div class="overflow-x-auto">
+    <section class="card-premium overflow-hidden">
+        <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Menu tanpa resep</h2>
+        <table class="table-premium">
+            <tbody>
+                @forelse($noRecipe->take(10) as $product)
+                    <tr>
+                        <td class="font-bold text-neutral">{{ $product->name }}</td>
+                        <td class="text-right text-xs text-base-content/60">
+                            @if($product->missing_recipe_hits) terjual {{ $product->missing_recipe_hits }}× tanpa potong stok @endif
+                        </td>
+                        @can('manage-inventory')
+                            <td class="text-right"><a href="{{ route('recipes.show', $product->pos_product_id) }}" class="btn btn-ghost btn-xs">Atur resep</a></td>
+                        @endcan
+                    </tr>
+                @empty
+                    <tr><td class="text-center py-8 text-xs text-base-content/50">Semua menu sudah punya resep.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </section>
+
+    @if($negativeStock->isNotEmpty())
+        <section class="card-premium overflow-hidden">
+            <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200 text-error">Stok negatif — perlu opname</h2>
             <table class="table-premium">
-                <thead>
-                    <tr>
-                        <th>Waktu</th>
-                        <th>Item</th>
-                        <th>Tipe</th>
-                        <th class="text-right">Perubahan</th>
-                        <th class="text-right">Saldo</th>
-                    </tr>
-                </thead>
                 <tbody>
-                    @forelse($recentMovements as $mov)
-                    <tr>
-                        <td class="text-[11px] text-gray-400 font-mono whitespace-nowrap">{{ $mov->created_at->format('d/m H:i') }}</td>
-                        <td class="font-bold text-neutral text-xs">{{ $mov->item?->name ?? 'Deleted Item' }}</td>
-                        <td>
-                            @if($mov->type == 'stock_in')
-                                <span class="badge badge-success text-white text-[10px] font-bold">Stock In</span>
-                            @elseif($mov->type == 'stock_out_pos')
-                                <span class="badge badge-primary text-white text-[10px] font-bold">POS Order</span>
-                            @else
-                                <span class="badge badge-warning text-neutral text-[10px] font-bold">Adjustment</span>
-                            @endif
-                        </td>
-                        <td class="text-right font-black text-xs {{ $mov->quantity_change >= 0 ? 'text-success' : 'text-error' }}">
-                            {{ $mov->quantity_change > 0 ? '+' : '' }}{{ number_format($mov->quantity_change, 2) }}
-                        </td>
-                        <td class="text-right font-bold text-xs text-neutral">
-                            {{ number_format($mov->quantity_after, 2) }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-6 text-gray-400 text-xs font-medium">Belum ada riwayat mutasi stok.</td>
-                    </tr>
-                    @endforelse
+                    @foreach($negativeStock as $item)
+                        <tr>
+                            <td><a href="{{ route('ingredients.show', $item) }}" class="font-bold text-neutral hover:text-primary">{{ $item->name }}</a></td>
+                            <td class="text-right"><span class="badge badge-error font-bold">{{ $item->formatQty($item->current_stock) }}</span></td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
-        </div>
-    </div>
+        </section>
+    @endif
 
-    <!-- Restock / Stock In Terbaru -->
-    <div class="card-premium p-6 space-y-4">
-        <div class="flex justify-between items-center border-b border-base-200 pb-3">
-            <h2 class="text-base font-bold text-neutral flex items-center gap-2">
-                <i data-lucide="truck" class="w-4.5 h-4.5 text-primary"></i>
-                Stock In / Pembelian Terakhir
-            </h2>
-            <a href="{{ route('stock-in.index') }}" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-                Lihat Semua <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </a>
-        </div>
-        <div class="space-y-3">
-            @forelse($recentStockIns as $stkIn)
-            <div class="flex items-center justify-between p-3.5 bg-base-200/40 hover:bg-base-200/80 rounded-xl border border-base-200 transition-colors">
-                <div class="space-y-0.5">
-                    <div class="font-mono font-bold text-xs text-primary flex items-center gap-1.5">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-gray-400"></i>
-                        {{ $stkIn->reference_no }}
-                    </div>
-                    <div class="text-xs font-semibold text-neutral">Supplier: {{ $stkIn->supplier?->name ?? 'Umum' }}</div>
-                    <div class="text-[10px] text-gray-400 font-medium">{{ $stkIn->transaction_date->format('d M Y') }}</div>
-                </div>
-                <div class="text-right">
-                    <div class="font-black text-sm text-neutral">Rp {{ number_format($stkIn->total_cost, 0, ',', '.') }}</div>
-                    <div class="text-[11px] text-gray-400 font-medium">{{ $stkIn->user?->name ?? 'Staff' }}</div>
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-8 text-gray-400 text-xs font-medium">Belum ada transaksi Stock In.</div>
-            @endforelse
-        </div>
-    </div>
+    @if($soldOut->isNotEmpty())
+        <section class="card-premium overflow-hidden">
+            <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Menu ditandai habis (stok tidak cukup)</h2>
+            <table class="table-premium">
+                <tbody>
+                    @foreach($soldOut as $product)
+                        <tr><td class="font-bold text-neutral">{{ $product->name }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
+    @endif
 </div>
 @endsection

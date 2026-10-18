@@ -2,46 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Item;
-use App\Models\StockIn;
-use App\Models\StockMovement;
-use App\Models\Supplier;
-use App\Services\StockService;
-use Illuminate\Http\Request;
+use App\Models\Ingredient;
+use App\Models\PosProduct;
+use App\Models\RecipeItem;
+use App\Models\WebhookInbox;
+use App\Services\CostingService;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    protected StockService $stockService;
-
-    public function __construct(StockService $stockService)
+    public function __invoke(CostingService $costing): View
     {
-        $this->stockService = $stockService;
-    }
+        $outlet = auth()->user()->outlet;
 
-    public function index()
-    {
-        $totalItems = Item::count();
-        $totalSuppliers = Supplier::count();
-        $totalValuation = Item::selectRaw('SUM(quantity_on_hand * unit_cost) as total')->value('total') ?? 0;
-        $lowStockItems = $this->stockService->getLowStockItems();
-        
-        $recentMovements = StockMovement::with(['item.unit', 'user'])
-            ->latest()
-            ->take(8)
-            ->get();
-
-        $recentStockIns = StockIn::with(['supplier', 'user'])
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return view('dashboard', compact(
-            'totalItems',
-            'totalSuppliers',
-            'totalValuation',
-            'lowStockItems',
-            'recentMovements',
-            'recentStockIns'
-        ));
+        return view('dashboard', [
+            'outlet' => $outlet,
+            'lowStock' => Ingredient::lowStock()->orderByRaw('current_stock - min_stock')->limit(10)->get(),
+            'lowStockCount' => Ingredient::lowStock()->count(),
+            'negativeStock' => Ingredient::where('current_stock', '<', 0)->orderBy('current_stock')->get(),
+            'noRecipe' => PosProduct::query()
+                ->whereNotIn('pos_product_id', RecipeItem::query()->select('pos_product_id'))
+                ->orderByDesc('missing_recipe_hits')
+                ->orderBy('name')
+                ->get(),
+            'soldOut' => PosProduct::where('auto_unavailable', true)->orderBy('name')->get(),
+            'stockValue' => auth()->user()->can('view-costs') ? $costing->stockValue() : null,
+            'failedEvents' => WebhookInbox::whereNull('processed_at')->whereNotNull('last_error')->count(),
+            'pendingEvents' => WebhookInbox::whereNull('processed_at')->count(),
+        ]);
     }
 }

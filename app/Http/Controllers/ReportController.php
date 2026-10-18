@@ -2,55 +2,75 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Item;
-use App\Models\StockInItem;
-use App\Models\StockMovement;
+use App\Services\ReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ReportService $reports): View
     {
-        $startDate = $request->get('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->get('end_date', now()->toDateString());
+        [$type, $from, $to] = $this->filters($request);
 
-        // Current stock valuation report
-        $stockSummary = Item::with(['category', 'unit'])
-            ->select('items.*')
-            ->selectRaw('(quantity_on_hand * unit_cost) as total_valuation')
-            ->orderBy('name')
-            ->get();
+        return view('reports.index', [
+            'types' => ReportService::TYPES,
+            'type' => $type,
+            'from' => $from,
+            'to' => $to,
+            'report' => $reports->build($type, $from, $to),
+        ]);
+    }
 
-        $totalValuation = $stockSummary->sum('total_valuation');
-        $totalItems = $stockSummary->count();
-        $lowStockCount = $stockSummary->filter(fn($i) => $i->isLowStock())->count();
+    public function export(Request $request, ReportService $reports): StreamedResponse|Response
+    {
+        [$type, $from, $to] = $this->filters($request);
+        $report = $reports->build($type, $from, $to);
+        $filename = 'laporan-' . Str::slug($report['title']) . '-' . $from->toDateString() . '_' . $to->toDateString();
 
-        // Stock movement summary per period
-        $movementSummary = StockMovement::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select('type', DB::raw('COUNT(*) as total_transactions'), DB::raw('SUM(ABS(quantity_change)) as total_qty'))
-            ->groupBy('type')
-            ->get()
-            ->keyBy('type');
+        if ($request->query('format') === 'pdf') {
+            return Pdf::loadView('reports.pdf', [
+                'report' => $report,
+                'from' => $from,
+                'to' => $to,
+                'outlet' => $request->user()->outlet,
+            ])->setPaper('a4', count($report['columns']) > 5 ? 'landscape' : 'portrait')
+                ->download("{$filename}.pdf");
+        }
 
-        // Top restocked items (most frequently purchased)
-        $frequentRestocks = StockInItem::with('item.unit')
-            ->select('item_id', DB::raw('SUM(quantity) as total_restock_qty'), DB::raw('SUM(subtotal) as total_restock_cost'), DB::raw('COUNT(*) as restock_count'))
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->groupBy('item_id')
-            ->orderByDesc('total_restock_qty')
-            ->take(10)
-            ->get();
+        return response()->streamDownload(function () use ($report) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // BOM agar Excel membaca UTF-8
+            fputcsv($out, $report['columns']);
+            foreach ($report['rows'] as $row) {
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        }, "{$filename}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
 
-        return view('reports.index', compact(
-            'startDate',
-            'endDate',
-            'stockSummary',
-            'totalValuation',
-            'totalItems',
-            'lowStockCount',
-            'movementSummary',
-            'frequentRestocks'
-        ));
+    /**
+     * @return array{0: string, 1: Carbon, 2: Carbon}
+     */
+    protected function filters(Request $request): array
+    {
+        $data = $request->validate([
+            'type' => ['nullable', 'in:' . implode(',', array_keys(ReportService::TYPES))],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+
+        $from = Carbon::parse($data['from'] ?? now()->startOfMonth());
+        $to = Carbon::parse($data['to'] ?? now());
+
+        if ($to->lt($from)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [$data['type'] ?? 'movements', $from, $to];
     }
 }

@@ -1,321 +1,216 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Resep & Modifier')
+@section('title', 'Resep ' . $product->name)
 
 @section('content')
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('recipes.index') }}" class="btn btn-xs btn-ghost gap-1 text-gray-500 font-bold">
-                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Resep
-                </a>
-            </div>
-            <h1 class="text-2xl font-black text-neutral tracking-tight flex items-center gap-2.5 mt-2">
-                <i data-lucide="chef-hat" class="w-7 h-7 text-primary"></i>
-                Detail Resep: {{ $productName }}
-            </h1>
-            <p class="text-xs text-gray-500 font-medium mt-1">
-                Kelola resep dasar serta penyesuaian kebutuhan bahan baku berdasarkan modifier/pilihan tambahan kasir.
-            </p>
-        </div>
+<x-page-header :title="$product->name" :subtitle="'Harga jual Rp ' . number_format($product->price, 0, ',', '.') . ($product->category ? ' · ' . $product->category : '')">
+    <x-slot:actions>
+        <a href="{{ route('recipes.index') }}" class="btn btn-ghost btn-sm min-h-11 gap-2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali</a>
+    </x-slot:actions>
+</x-page-header>
+
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">HPP</div>
+        <div class="text-2xl font-extrabold mt-1" id="hpp-value">Rp {{ number_format($summary['hpp'], 0, ',', '.') }}</div>
     </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Base Recipe List (2/3 width on large screen) -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Base Recipe Card -->
-            <div class="bg-base-100 rounded-3xl border border-base-300 shadow-xs overflow-hidden">
-                <div class="p-5 border-b border-base-200 flex justify-between items-center bg-base-200/30">
-                    <h2 class="font-extrabold text-sm text-neutral flex items-center gap-2">
-                        <i data-lucide="layers" class="w-4 h-4 text-primary"></i>
-                        Bahan Baku Dasar (Normal Base)
-                    </h2>
-                    <span class="badge badge-neutral text-[10px] font-black uppercase">Default Recipe</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="table w-full text-xs">
-                        <thead>
-                            <tr class="bg-base-200/20 text-neutral uppercase font-black tracking-wider text-[10px]">
-                                <th>Bahan Baku</th>
-                                <th>Jumlah per Produk</th>
-                                <th>Satuan Resep</th>
-                                <th>Stok Saat Ini</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($baseRecipes as $recipe)
-                                <tr>
-                                    <td>
-                                        <div class="font-bold text-neutral">{{ $recipe->stockItem?->name ?? '-' }}</div>
-                                        <div class="text-[10px] text-gray-400 font-mono">SKU: {{ $recipe->stockItem?->sku ?? '-' }}</div>
-                                    </td>
-                                    <td class="font-bold text-sm text-neutral">
-                                        {{ number_format($recipe->quantity_needed, 4) }}
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-ghost font-bold">{{ $recipe->unit ?? ($recipe->stockItem?->unit?->symbol ?? '-') }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $recipe->stockItem?->quantity_on_hand <= $recipe->stockItem?->minimum_stock ? 'badge-error' : 'badge-success' }} text-white font-extrabold px-2 py-0.5">
-                                            {{ number_format($recipe->stockItem?->quantity_on_hand ?? 0, 2) }} {{ $recipe->stockItem?->unit?->symbol ?? '' }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center py-8 text-gray-400">
-                                        Tidak ada bahan baku dasar untuk resep ini.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Modifiers Adjustment Card -->
-            <div class="bg-base-100 rounded-3xl border border-base-300 shadow-xs overflow-hidden">
-                <div class="p-5 border-b border-base-200 flex justify-between items-center bg-base-200/30">
-                    <h2 class="font-extrabold text-sm text-neutral flex items-center gap-2">
-                        <i data-lucide="sliders" class="w-4 h-4 text-warning"></i>
-                        Penyesuaian per Modifier
-                    </h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="table w-full text-xs">
-                        <thead>
-                            <tr class="bg-base-200/20 text-neutral uppercase font-black tracking-wider text-[10px]">
-                                <th>Modifier Option</th>
-                                <th>Bahan Baku Terpengaruh</th>
-                                <th>Jenis Penyesuaian</th>
-                                <th>Jumlah Penyesuaian</th>
-                                <th>Unit</th>
-                                <th class="text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($modifierAdjustments as $adj)
-                                <tr>
-                                    <td>
-                                        <div class="font-bold text-neutral">{{ $adj->pos_modifier_name }}</div>
-                                        <div class="text-[10px] text-gray-400 font-mono">ID: {{ $adj->pos_modifier_id }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="font-semibold text-neutral">{{ $adj->stockItem?->name ?? 'Unknown Item' }}</span>
-                                    </td>
-                                    <td>
-                                        @if($adj->adjustment_type === 'override')
-                                            <span class="badge badge-neutral text-white font-bold text-[10px] px-2 py-0.5">OVERRIDE</span>
-                                        @elseif($adj->adjustment_type === 'add')
-                                            <span class="badge badge-success text-white font-bold text-[10px] px-2 py-0.5">+ ADD</span>
-                                        @else
-                                            <span class="badge badge-warning text-white font-bold text-[10px] px-2 py-0.5">- SUBTRACT</span>
-                                        @endif
-                                    </td>
-                                    <td class="font-bold text-neutral">
-                                        {{ number_format($adj->adjustment_qty, 4) }}
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-ghost">{{ $adj->unit ?? '-' }}</span>
-                                    </td>
-                                    <td class="text-right">
-                                        <form action="{{ route('recipes.adjustments.destroy', $adj->id) }}" method="POST" onsubmit="return confirm('Hapus aturan penyesuaian ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-ghost text-error">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center py-12 text-gray-400">
-                                        <i data-lucide="info" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
-                                        <div class="font-bold">Belum ada aturan modifier</div>
-                                        <div class="text-[10px]">Gunakan panel sebelah kanan untuk menambahkan aturan penyesuaian per modifier.</div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Side controls (1/3 width) -->
-        <div class="space-y-6">
-            <!-- Add Modifier Rule Card -->
-            <div class="bg-base-100 rounded-3xl border border-base-300 shadow-xs p-5 space-y-4">
-                <h3 class="font-black text-sm text-neutral flex items-center gap-2 pb-2 border-b border-base-200">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-primary"></i>
-                    Tambah Penyesuaian Modifier
-                </h3>
-
-                <form action="{{ route('recipes.adjustments.store', $posProductId) }}" method="POST" class="space-y-4 text-xs">
-                    @csrf
-                    <div>
-                        <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Pilih Modifier (POS)</label>
-                        <select id="modifier_selector" class="select select-bordered select-sm w-full rounded-xl font-bold" required onchange="updateModifierName()">
-                            <option value="">-- Pilih Modifier --</option>
-                            @foreach($modifiersList as $mod)
-                                <option value="{{ $mod['id'] }}" data-name="{{ $mod['name'] }}">{{ $mod['name'] }} (ID: {{ $mod['id'] }})</option>
-                            @endforeach
-                        </select>
-                        <input type="hidden" name="pos_modifier_id" id="pos_modifier_id">
-                        <input type="hidden" name="pos_modifier_name" id="pos_modifier_name">
-                    </div>
-
-                    <div>
-                        <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Bahan Baku (Inventory)</label>
-                        <select name="stock_item_id" class="select select-bordered select-sm w-full rounded-xl font-bold" required>
-                            <option value="">-- Pilih Bahan Baku --</option>
-                            @foreach($stockItems as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }} (SKU: {{ $item->sku }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Jenis Aksi</label>
-                            <select name="adjustment_type" class="select select-bordered select-sm w-full rounded-xl font-bold" required>
-                                <option value="override">Override (Ganti)</option>
-                                <option value="add">Add (Tambah)</option>
-                                <option value="subtract">Subtract (Kurang)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Jumlah</label>
-                            <input type="number" step="0.0001" min="0" name="adjustment_qty" class="input input-bordered input-sm w-full rounded-xl font-black text-center" placeholder="0.00" required>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Satuan (Optional)</label>
-                        <input type="text" name="unit" class="input input-bordered input-sm w-full rounded-xl font-bold" placeholder="pcs, ml, gram, lembar">
-                    </div>
-
-                    <button type="submit" class="btn btn-sm btn-primary text-white w-full rounded-xl font-extrabold shadow-sm mt-2">
-                        Simpan Aturan Modifier
-                    </button>
-                </form>
-            </div>
-
-            <!-- Calculation Preview Card -->
-            <div class="bg-base-100 rounded-3xl border border-base-300 shadow-xs p-5 space-y-4">
-                <h3 class="font-black text-sm text-neutral flex items-center gap-2 pb-2 border-b border-base-200">
-                    <i data-lucide="calculator" class="w-4 h-4 text-info"></i>
-                    Simulasi Preview Potong Stok
-                </h3>
-
-                <div class="space-y-3 text-xs">
-                    <div>
-                        <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Jumlah Pembelian (Qty)</label>
-                        <input type="number" min="1" id="preview_qty" value="1" class="input input-bordered input-sm w-full rounded-xl font-black text-center" oninput="runSimulation()">
-                    </div>
-
-                    <div>
-                        <label class="label font-extrabold text-gray-500 uppercase tracking-wider text-[10px] pb-1">Aktifkan Modifier</label>
-                        <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-                            @foreach(collect($modifierAdjustments)->unique('pos_modifier_id') as $mod)
-                                <label class="flex items-center gap-2.5 p-2 rounded-xl bg-base-200/50 hover:bg-base-200 cursor-pointer border border-base-300/40">
-                                    <input type="checkbox" name="active_mods[]" value="{{ $mod->pos_modifier_id }}" class="checkbox checkbox-xs checkbox-primary" onchange="runSimulation()">
-                                    <span class="font-semibold text-neutral text-[11px]">{{ $mod->pos_modifier_name }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="pt-3 border-t border-base-200">
-                        <div class="font-bold text-[10px] text-gray-400 uppercase mb-2">Hasil Perbandingan:</div>
-                        <div id="sim_results" class="space-y-2">
-                            <div class="text-center py-4 text-gray-400 text-[11px]">Silakan pilih qty/modifier untuk melihat perbandingan.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Margin</div>
+        <div class="text-2xl font-extrabold mt-1 {{ $summary['margin'] < 0 ? 'text-error' : 'text-success' }}">Rp {{ number_format($summary['margin'], 0, ',', '.') }}</div>
     </div>
-</div>
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Margin %</div>
+        <div class="text-2xl font-extrabold mt-1">{{ $summary['margin_pct'] !== null ? $summary['margin_pct'] . '%' : '-' }}</div>
+    </div>
+    <div class="card-premium p-4">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Porsi tersedia</div>
+        <div class="text-2xl font-extrabold mt-1">{{ $portions ?? '-' }}</div>
+    </div>
+</section>
+
+{{-- Resep dasar --}}
+<form method="POST" action="{{ route('recipes.update', $product->pos_product_id) }}" class="card-premium overflow-hidden">
+    @csrf @method('PUT')
+    <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Resep dasar (1 porsi)</h2>
+    <div class="overflow-x-auto">
+        <table class="table-premium">
+            <thead><tr><th class="min-w-56">Bahan</th><th class="min-w-40">Takaran</th><th class="text-right">Biaya</th><th></th></tr></thead>
+            <tbody id="recipe-rows"></tbody>
+        </table>
+    </div>
+    <div class="p-4 border-t border-base-200 flex justify-between items-center">
+        <button type="button" id="add-item" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah bahan</button>
+        <button type="submit" class="btn btn-primary min-h-11">Simpan Resep</button>
+    </div>
+</form>
+
+{{-- Penyesuaian per opsi kustomisasi --}}
+<section class="card-premium overflow-hidden">
+    <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Penyesuaian per opsi kustomisasi</h2>
+    <p class="px-5 pt-3 text-[11px] text-base-content/60">Urutan penerapan: ganti bahan → tambah bahan → kalikan takaran.</p>
+
+    @forelse($modifiers as $groupId => $groupModifiers)
+        <div class="px-5 py-3 border-b border-base-200 last:border-0">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/50 mb-2">{{ $groups[$groupId]->name ?? 'Opsi' }}</div>
+            <div class="space-y-2">
+                @foreach($groupModifiers as $modifier)
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="flex items-center gap-2 min-w-40 font-bold text-sm">
+                            <input type="checkbox" class="checkbox checkbox-sm checkbox-primary preview-modifier" value="{{ $modifier->pos_modifier_id }}" />
+                            {{ $modifier->name }}
+                        </label>
+
+                        @foreach($adjustments[$modifier->pos_modifier_id] ?? [] as $adjustment)
+                            <span class="badge badge-neutral gap-1 py-3">
+                                @switch($adjustment->action->value)
+                                    @case('add') + {{ $adjustment->ingredient->formatQty($adjustment->qty) }} {{ $adjustment->ingredient->name }} @break
+                                    @case('replace') {{ $adjustment->replacesIngredient->name }} → {{ $adjustment->ingredient->name }}@if($adjustment->qty) ({{ $adjustment->ingredient->formatQty($adjustment->qty) }})@endif @break
+                                    @case('multiply') × {{ rtrim(rtrim(number_format($adjustment->factor, 4, ',', '.'), '0'), ',') }} {{ $adjustment->ingredient?->name ?? 'semua bahan' }} @break
+                                @endswitch
+                                <form method="POST" action="{{ route('recipes.adjustments.destroy', $adjustment) }}" class="inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" aria-label="Hapus penyesuaian" class="ml-1 text-white/70 hover:text-white"><i data-lucide="x" class="w-3 h-3"></i></button>
+                                </form>
+                            </span>
+                        @endforeach
+
+                        <button type="button" class="btn btn-ghost btn-xs min-h-9 gap-1 ml-auto"
+                            onclick="openAdjustment({{ $modifier->pos_modifier_id }}, @js($modifier->name))">
+                            <i data-lucide="plus" class="w-3 h-3"></i> Penyesuaian
+                        </button>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @empty
+        <p class="text-center py-10 text-xs text-base-content/50">Menu ini tidak punya opsi kustomisasi (atau katalog belum disinkronkan).</p>
+    @endforelse
+
+    <div id="preview" class="hidden px-5 py-4 bg-base-200/60 border-t border-base-200 text-xs">
+        <div class="font-extrabold mb-1">Simulasi pemakaian untuk opsi yang dicentang</div>
+        <ul id="preview-usage" class="list-disc pl-5 space-y-0.5"></ul>
+        <div class="mt-2 font-extrabold">HPP kombinasi: <span id="preview-hpp"></span></div>
+    </div>
+</section>
+
+<x-modal id="modal-adjustment" title="Penyesuaian Opsi">
+    <form method="POST" action="{{ route('recipes.adjustments.store', $product->pos_product_id) }}" class="space-y-3" id="adjustment-form">
+        @csrf
+        <input type="hidden" name="pos_modifier_id" id="adj-modifier" />
+        <p class="text-xs font-bold text-base-content/70">Opsi: <span id="adj-modifier-name"></span></p>
+
+        <x-field label="Aksi" name="action">
+            <select name="action" id="adj-action" class="select w-full min-h-11 text-sm rounded-xl">
+                @foreach($actions as $action)
+                    <option value="{{ $action->value }}">{{ $action->label() }}</option>
+                @endforeach
+            </select>
+        </x-field>
+
+        <x-field label="Bahan yang diganti" name="replaces_ingredient_id" data-for="replace" class="adj-field" style="display:none">
+            <select name="replaces_ingredient_id" class="select w-full min-h-11 text-sm rounded-xl">
+                <option value="">Pilih bahan…</option>
+                @foreach($ingredients as $ingredient)<option value="{{ $ingredient->id }}">{{ $ingredient->name }}</option>@endforeach
+            </select>
+        </x-field>
+
+        <x-field label="Bahan" name="ingredient_id" hint="Untuk 'kalikan': kosongkan = semua bahan resep." data-for="add replace multiply" class="adj-field">
+            <select name="ingredient_id" class="select w-full min-h-11 text-sm rounded-xl">
+                <option value="">— semua bahan —</option>
+                @foreach($ingredients as $ingredient)<option value="{{ $ingredient->id }}">{{ $ingredient->name }}</option>@endforeach
+            </select>
+        </x-field>
+
+        <x-field label="Takaran" name="qty" hint="Satuan dasar. Pada 'ganti', kosong = sama dengan takaran bahan yang diganti." data-for="add replace" class="adj-field">
+            <input type="number" name="qty" min="0.001" step="any" class="input w-full min-h-11 text-sm rounded-xl" />
+        </x-field>
+
+        <x-field label="Faktor pengali" name="factor" hint="mis. 1.3 untuk ukuran besar." data-for="multiply" class="adj-field" style="display:none">
+            <input type="number" name="factor" min="0.0001" step="any" class="input w-full min-h-11 text-sm rounded-xl" />
+        </x-field>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
+            <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+        </div>
+    </form>
+</x-modal>
+@endsection
+
+@php
+    $ingredientOptions = $ingredients->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'unit' => $i->base_unit->value, 'cost' => (float) $i->avg_cost])->values();
+    $existingItems = old('items', $items->map(fn ($i) => ['ingredient_id' => $i->ingredient_id, 'qty' => (float) $i->qty])->values()->all());
+    $canViewCosts = auth()->user()->can('view-costs');
+@endphp
 
 @push('scripts')
 <script>
-function updateModifierName() {
-    const sel = document.getElementById('modifier_selector');
-    const opt = sel.options[sel.selectedIndex];
-    
-    if (opt.value) {
-        document.getElementById('pos_modifier_id').value = opt.value;
-        document.getElementById('pos_modifier_name').value = opt.getAttribute('data-name');
-    } else {
-        document.getElementById('pos_modifier_id').value = '';
-        document.getElementById('pos_modifier_name').value = '';
+    const allIngredients = @json($ingredientOptions);
+    const existing = @json($existingItems);
+    const showCosts = @json($canViewCosts);
+    const body = document.getElementById('recipe-rows');
+    let n = 0;
+
+    function addItem(values = {}) {
+        const i = n++;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><select name="items[${i}][ingredient_id]" required class="select w-full min-h-11 text-sm rounded-xl">
+                <option value="">Pilih bahan…</option>
+                ${allIngredients.map((x) => `<option value="${x.id}">${x.name}</option>`).join('')}
+            </select></td>
+            <td><div class="flex items-center gap-2">
+                <input type="number" name="items[${i}][qty]" min="0.001" step="any" required class="input w-full min-h-11 text-sm rounded-xl" />
+                <span class="text-xs font-bold text-base-content/60 unit"></span></div></td>
+            <td class="text-right text-xs font-bold cost">-</td>
+            <td><button type="button" class="btn-action-delete remove" aria-label="Hapus bahan"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+        body.appendChild(tr);
+
+        const select = tr.querySelector('select');
+        const qty = tr.querySelector('input');
+        select.value = values.ingredient_id ?? '';
+        qty.value = values.qty ?? '';
+
+        const refresh = () => {
+            const item = allIngredients.find((x) => String(x.id) === select.value);
+            tr.querySelector('.unit').textContent = item?.unit ?? '';
+            tr.querySelector('.cost').textContent = item && qty.value && showCosts
+                ? 'Rp ' + (item.cost * qty.value).toLocaleString('id-ID', { maximumFractionDigits: 0 }) : '-';
+        };
+        [select, qty].forEach((el) => el.addEventListener('input', refresh));
+        tr.querySelector('.remove').addEventListener('click', () => tr.remove());
+        refresh();
+        window.initLucideIcons?.();
     }
-}
 
-function runSimulation() {
-    const qty = document.getElementById('preview_qty').value || 1;
-    const checked = Array.from(document.querySelectorAll('input[name="active_mods[]"]:checked')).map(el => el.value);
+    document.getElementById('add-item').addEventListener('click', () => addItem());
+    existing.forEach((row) => addItem(row));
 
-    fetch("{{ route('recipes.preview', $posProductId) }}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-        },
-        body: JSON.stringify({
-            qty_order: qty,
-            modifier_ids: checked
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (!data.success) return;
-
-        const resultsContainer = document.getElementById('sim_results');
-        resultsContainer.innerHTML = '';
-
-        if (data.comparison.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-center py-4 text-gray-400 text-[11px]">Tidak ada bahan baku terpengaruh.</div>';
-            return;
-        }
-
-        data.comparison.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'p-3 rounded-2xl bg-base-200/60 border border-base-300/80 flex flex-col gap-1';
-            
-            let diffBadge = '';
-            if (item.diff > 0) {
-                diffBadge = `<span class="badge badge-success text-[10px] text-white font-extrabold">+${item.diff.toFixed(2)} ${item.unit}</span>`;
-            } else if (item.diff < 0) {
-                diffBadge = `<span class="badge badge-error text-[10px] text-white font-extrabold">${item.diff.toFixed(2)} ${item.unit}</span>`;
-            } else {
-                diffBadge = `<span class="badge badge-ghost text-[10px] text-neutral font-semibold">no change</span>`;
-            }
-
-            row.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="font-extrabold text-neutral text-[11px]">${item.item_name}</span>
-                    ${diffBadge}
-                </div>
-                <div class="flex justify-between text-[10px] text-gray-500 font-medium">
-                    <span>Base: ${item.base_qty.toFixed(2)} ${item.unit}</span>
-                    <span class="font-bold text-neutral">Modified: ${item.modified_qty.toFixed(2)} ${item.unit}</span>
-                </div>
-            `;
-            resultsContainer.appendChild(row);
+    // Modal penyesuaian
+    const action = document.getElementById('adj-action');
+    function syncAdjustmentFields() {
+        document.querySelectorAll('#adjustment-form .adj-field').forEach((field) => {
+            field.style.display = field.dataset.for.split(' ').includes(action.value) ? '' : 'none';
         });
-    })
-    .catch(err => console.error("Simulation failed:", err));
-}
+    }
+    action.addEventListener('change', syncAdjustmentFields);
+    function openAdjustment(id, name) {
+        document.getElementById('adj-modifier').value = id;
+        document.getElementById('adj-modifier-name').textContent = name;
+        syncAdjustmentFields();
+        document.getElementById('modal-adjustment').showModal();
+    }
 
-// Initial simulation load
-document.addEventListener('DOMContentLoaded', () => {
-    runSimulation();
-});
+    // Simulasi pemakaian
+    const previewBox = document.getElementById('preview');
+    async function runPreview() {
+        const ids = [...document.querySelectorAll('.preview-modifier:checked')].map((c) => `modifier_ids[]=${c.value}`);
+        const response = await fetch(`{{ route('recipes.preview', $product->pos_product_id) }}?${ids.join('&')}`, { headers: { Accept: 'application/json' } });
+        const data = await response.json();
+        previewBox.classList.toggle('hidden', ids.length === 0);
+        document.getElementById('preview-usage').innerHTML = data.usage.map((u) => `<li>${u.ingredient}: ${u.qty}</li>`).join('');
+        document.getElementById('preview-hpp').textContent = showCosts ? 'Rp ' + data.hpp.toLocaleString('id-ID') : '-';
+    }
+    document.querySelectorAll('.preview-modifier').forEach((c) => c.addEventListener('change', runPreview));
 </script>
 @endpush
-@endsection

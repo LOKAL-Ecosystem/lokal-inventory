@@ -3,59 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SupplierController extends Controller
 {
-    public function index(Request $request)
+    public function index(): View
     {
-        $query = Supplier::withCount('items');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('contact_person', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-        }
-
-        $suppliers = $query->latest()->paginate(15);
-
-        return view('suppliers.index', compact('suppliers'));
+        return view('suppliers.index', ['suppliers' => Supplier::orderBy('name')->paginate(25)]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-        ]);
+        Supplier::create($this->validated($request));
 
-        Supplier::create($validated);
-
-        return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil ditambahkan.');
+        return back()->with('success', 'Supplier ditambahkan.');
     }
 
-    public function update(Request $request, Supplier $supplier)
+    public function update(Request $request, Supplier $supplier): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-        ]);
+        $supplier->update($this->validated($request));
 
-        $supplier->update($validated);
-
-        return redirect()->route('suppliers.index')->with('success', 'Data supplier berhasil diperbarui.');
+        return back()->with('success', 'Supplier diperbarui.');
     }
 
-    public function destroy(Supplier $supplier)
+    public function destroy(Supplier $supplier): RedirectResponse
     {
         $supplier->delete();
-        return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil dihapus.');
+
+        return back()->with('success', 'Supplier dihapus.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function validated(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'contact' => ['nullable', 'string', 'max:255'],
+        ]);
     }
 }
