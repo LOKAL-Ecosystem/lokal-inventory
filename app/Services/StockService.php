@@ -2,116 +2,143 @@
 
 namespace App\Services;
 
-use App\Models\Item;
-use App\Models\StockIn;
-use App\Models\StockInItem;
+use App\Enums\StockMovementType;
+use App\Enums\WasteReason;
+use App\Models\Ingredient;
 use App\Models\StockMovement;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Exception;
+use Illuminate\Support\Str;
 
+/**
+ * Satu-satunya pintu penulisan ledger stok. Menjaga cache current_stock, avg_cost,
+ * dan idempotensi tetap konsisten. Jangan memanggil StockMovement::create() dari tempat lain.
+ */
 class StockService
 {
-    /**
-     * Process stock in / purchasing transaction
-     */
-    public function recordStockIn(array $data, array $itemsData, ?int $userId = null): StockIn
+    public function __construct(protected MenuAvailabilityService $availability)
     {
-        return DB::transaction(function () use ($data, $itemsData, $userId) {
-            $totalCost = 0;
-            foreach ($itemsData as $row) {
-                $totalCost += ($row['quantity'] * $row['unit_cost']);
+    }
+
+    /**
+     * Catat satu pergerakan. Mengembalikan null bila pergerakan yang sama sudah ada (idempoten).
+     * Dipanggil di dalam transaksi pemanggil; cache stok ikut diperbarui di transaksi yang sama.
+     *
+     * @param  array{unit_cost?: float|null, pos_order_uuid?: string|null, reason?: string|null, note?: string|null, created_by?: int|null}  $extra
+     */
+    public function record(
+        Ingredient|int $ingredient,
+        StockMovementType $type,
+        float $qty,
+        string $sourceType,
+        string $sourceId,
+        array $extra = [],
+    ): ?StockMovement {
+        $ingredientId = $ingredient instanceof Ingredient ? $ingredient->id : $ingredient;
+        $qty = round($qty, 3);
+
+        return DB::transaction(function () use ($ingredientId, $type, $qty, $sourceType, $sourceId, $extra) {
+            $locked = Ingredient::query()->lockForUpdate()->findOrFail($ingredientId);
+
+            $exists = StockMovement::query()
+                ->where('type', $type->value)
+                ->where('source_type', $sourceType)
+                ->where('source_id', $sourceId)
+                ->where('ingredient_id', $ingredientId)
+                ->exists();
+
+            if ($exists) {
+                return null;
             }
 
-            $stockIn = StockIn::create([
-                'reference_no' => 'STK-IN-' . date('YmdHis') . '-' . rand(100, 999),
-                'supplier_id' => $data['supplier_id'] ?? null,
-                'user_id' => $userId,
-                'transaction_date' => $data['transaction_date'] ?? now(),
-                'total_cost' => $totalCost,
-                'notes' => $data['notes'] ?? null,
-            ]);
+            try {
+                $movement = DB::transaction(fn () => StockMovement::create([
+                    'ingredient_id' => $ingredientId,
+                    'type' => $type,
+                    'qty' => $qty,
+                    'unit_cost' => $extra['unit_cost'] ?? null,
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'pos_order_uuid' => $extra['pos_order_uuid'] ?? null,
+                    'reason' => $extra['reason'] ?? null,
+                    'note' => $extra['note'] ?? null,
+                    'created_by' => $extra['created_by'] ?? null,
+                ]));
+            } catch (QueryException $e) {
+                // Unique constraint (permintaan paralel yang sama): anggap duplikat.
+                if (in_array($e->getCode(), ['23000', '23505'], true)) {
+                    return null;
+                }
 
-            foreach ($itemsData as $row) {
-                $item = Item::findOrFail($row['item_id']);
-                $subtotal = $row['quantity'] * $row['unit_cost'];
-
-                StockInItem::create([
-                    'stock_in_id' => $stockIn->id,
-                    'item_id' => $item->id,
-                    'quantity' => $row['quantity'],
-                    'unit_cost' => $row['unit_cost'],
-                    'subtotal' => $subtotal,
-                ]);
-
-                // Update item stock & cost
-                $qtyBefore = $item->quantity_on_hand;
-                $qtyChange = $row['quantity'];
-                $qtyAfter = $qtyBefore + $qtyChange;
-
-                $item->quantity_on_hand = $qtyAfter;
-                $item->unit_cost = $row['unit_cost'];
-                $item->save();
-
-                // Log movement
-                StockMovement::create([
-                    'item_id' => $item->id,
-                    'type' => 'stock_in',
-                    'quantity_before' => $qtyBefore,
-                    'quantity_change' => $qtyChange,
-                    'quantity_after' => $qtyAfter,
-                    'reference_no' => $stockIn->reference_no,
-                    'description' => 'Pembelian / Restock dari Supplier',
-                    'user_id' => $userId,
-                ]);
+                throw $e;
             }
 
-            return $stockIn;
+            $stockBefore = (float) $locked->current_stock;
+
+            if ($type === StockMovementType::Purchase && ($extra['unit_cost'] ?? null) !== null && $qty > 0) {
+                $locked->avg_cost = $this->weightedAverageCost(
+                    $stockBefore,
+                    (float) $locked->avg_cost,
+                    $qty,
+                    (float) $extra['unit_cost'],
+                );
+            }
+
+            $locked->current_stock = round($stockBefore + $qty, 3);
+            $locked->save();
+
+            return $movement;
         });
     }
 
     /**
-     * Record automatic stock deduction from POS Order
+     * avg_cost baru = (stok lama × avg lama + qty beli × harga beli) / (stok lama + qty beli).
+     * Bila stok lama ≤ 0, avg_cost = harga beli.
      */
-    public function recordPosStockDeduction(string $posProductIdOrSku, float $quantity, string $orderRef, string $customerNotes = ''): StockMovement
+    public function weightedAverageCost(float $oldStock, float $oldAvg, float $boughtQty, float $unitCost): float
     {
-        return DB::transaction(function () use ($posProductIdOrSku, $quantity, $orderRef, $customerNotes) {
-            // Find item by pos_product_id or sku
-            $item = Item::where('pos_product_id', $posProductIdOrSku)
-                ->orWhere('sku', $posProductIdOrSku)
-                ->first();
+        if ($oldStock <= 0) {
+            return round($unitCost, 4);
+        }
 
-            if (!$item) {
-                throw new Exception("Item dengan POS ID/SKU [{$posProductIdOrSku}] tidak ditemukan di Lokal Inventory.");
-            }
-
-            $qtyBefore = $item->quantity_on_hand;
-            $qtyChange = -$quantity;
-            $qtyAfter = $qtyBefore + $qtyChange;
-
-            $item->quantity_on_hand = max(0, $qtyAfter);
-            $item->save();
-
-            return StockMovement::create([
-                'item_id' => $item->id,
-                'type' => 'stock_out_pos',
-                'quantity_before' => $qtyBefore,
-                'quantity_change' => $qtyChange,
-                'quantity_after' => $qtyAfter,
-                'reference_no' => $orderRef,
-                'description' => "Pengurangan otomatis dari Transaksi POS: {$orderRef}" . ($customerNotes ? " ({$customerNotes})" : ''),
-                'user_id' => null,
-            ]);
-        });
+        return round(($oldStock * $oldAvg + $boughtQty * $unitCost) / ($oldStock + $boughtQty), 4);
     }
 
     /**
-     * Get low stock items count & collection
+     * Catat bahan terbuang. $inPurchaseUnit = true bila $qty dalam satuan beli.
      */
-    public function getLowStockItems()
+    public function recordWaste(
+        Ingredient $ingredient,
+        float $qty,
+        WasteReason $reason,
+        ?string $note = null,
+        ?int $userId = null,
+        bool $inPurchaseUnit = false,
+    ): StockMovement {
+        $baseQty = $inPurchaseUnit ? $qty * (float) $ingredient->purchase_unit_qty : $qty;
+
+        $movement = $this->record(
+            $ingredient,
+            StockMovementType::Waste,
+            -abs($baseQty),
+            'waste',
+            (string) Str::uuid(),
+            ['reason' => $reason->value, 'note' => $note, 'created_by' => $userId],
+        );
+
+        $this->availability->refreshForIngredients([$ingredient->id]);
+
+        return $movement;
+    }
+
+    /**
+     * Hitung ulang current_stock dari ledger (untuk command inventory:rebuild-stock).
+     */
+    public function rebuild(Ingredient $ingredient): float
     {
-        return Item::with(['category', 'unit'])
-            ->whereRaw('quantity_on_hand <= minimum_stock')
-            ->where('is_active', true)
-            ->get();
+        $sum = (float) StockMovement::where('ingredient_id', $ingredient->id)->sum('qty');
+        $ingredient->forceFill(['current_stock' => round($sum, 3)])->save();
+
+        return round($sum, 3);
     }
 }
