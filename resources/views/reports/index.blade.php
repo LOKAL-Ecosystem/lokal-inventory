@@ -15,7 +15,7 @@
     </x-slot:actions>
 </x-page-header>
 
-<form method="GET" class="card-premium p-4 grid sm:grid-cols-4 gap-3 items-end">
+<form method="GET" class="bg-base-100 border border-base-300 rounded-2xl p-4 grid sm:grid-cols-4 gap-3 items-end">
     <x-field label="Jenis laporan" name="type">
         <select name="type" class="select w-full min-h-11 text-sm rounded-xl">
             @foreach($types as $key => $label)
@@ -28,13 +28,13 @@
     <button class="btn btn-neutral min-h-11">Tampilkan</button>
 </form>
 
-<div class="card-premium overflow-hidden">
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                 <tr>@foreach($report['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr>
             </thead>
-            <tbody>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($report['rows'] as $row)
                     <tr>
                         @foreach($row as $cell)

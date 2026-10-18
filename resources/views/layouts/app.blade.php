@@ -1,178 +1,176 @@
+@php
+    $user = auth()->user();
+    $outletName = $user->outlet?->name ?? 'Lokal Stock';
+    $lowStockCount = \App\Models\Ingredient::lowStock()->count();
+    $lowStockList = \App\Models\Ingredient::lowStock()->orderByRaw('current_stock - min_stock')->limit(5)->get();
+    $stuckEvents = \App\Models\WebhookInbox::whereNull('processed_at')->whereNotNull('last_error')->count();
+    $notifCount = $lowStockCount + ($user->can('manage-inventory') ? $stuckEvents : 0);
+@endphp
 <!DOCTYPE html>
 <html lang="id" data-theme="lokal">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Lokal Stock') - Lokal Stock</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('logo.svg') }}">
+    <title>@yield('title') - {{ $outletName }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<body class="bg-base-200 min-h-screen" data-user-name="{{ $user->name }}">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 btn btn-primary btn-sm">
+        Lewati ke konten
+    </a>
 
-<body class="bg-base-200 text-base-content min-h-screen antialiased selection:bg-primary selection:text-white">
-    @php
-        $authUser = auth()->user();
-        $lowStockCount = \App\Models\Ingredient::lowStock()->count();
-        $lowStockList = \App\Models\Ingredient::lowStock()->orderByRaw('current_stock - min_stock')->limit(5)->get();
-        $stuckEvents = \App\Models\WebhookInbox::whereNull('processed_at')->whereNotNull('last_error')->count();
-    @endphp
+    {{-- Flash messages are read by resources/js/app.js --}}
+    <div id="flash-data" hidden
+         data-success="{{ session('success') }}"
+         data-error="{{ session('error') }}"></div>
 
     <div class="drawer lg:drawer-open">
-        <input id="main-drawer" type="checkbox" class="drawer-toggle" />
+        <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
 
         <div class="drawer-content flex flex-col min-h-screen">
-            <nav class="navbar w-full bg-base-100/90 backdrop-blur-md border-b border-base-300/80 px-4 sm:px-8 flex justify-between items-center sticky top-0 z-30">
-                <div class="flex items-center gap-3">
-                    <label for="main-drawer" aria-label="Buka menu" class="btn btn-square btn-ghost btn-sm lg:hidden text-neutral">
-                        <i data-lucide="menu" class="w-5 h-5"></i>
+            <nav class="navbar relative z-40 w-full bg-base-100 border-b border-base-300 px-4 justify-between">
+                <div class="flex items-center gap-2">
+                    <label for="my-drawer-4" aria-label="Buka atau tutup menu samping" class="btn btn-square btn-ghost">
+                        <i data-lucide="menu" class="w-5 h-5" aria-hidden="true"></i>
                     </label>
-                    <span class="font-extrabold text-lg tracking-tight text-neutral flex items-center gap-2.5">
-                        <span class="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center font-extrabold">L</span>
-                        <span>Stock</span>
-                    </span>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div class="dropdown dropdown-end">
-                        <button tabindex="0" role="button" aria-label="Bahan hampir habis" class="w-11 h-11 rounded-xl bg-base-200 hover:bg-primary/10 hover:text-primary flex items-center justify-center text-neutral transition-all relative border border-base-300">
-                            <i data-lucide="bell" class="w-5 h-5"></i>
-                            @if($lowStockCount > 0)
-                                <span class="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-black text-white ring-2 ring-white">{{ $lowStockCount }}</span>
+                <div class="flex items-center gap-3">
+                    <span id="connection-badge" class="hidden badge badge-error gap-1.5 py-3 font-bold" role="status">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5" aria-hidden="true"></i>Tidak ada koneksi
+                    </span>
+                    <div id="notif" class="dropdown dropdown-end">
+                        <button type="button" tabindex="0" class="btn btn-ghost btn-sm btn-square rounded-lg relative" aria-label="Notifikasi stok">
+                            <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+                            @if($notifCount > 0)
+                                <span class="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-error text-error-content text-[10px] font-bold leading-4 text-center" aria-live="polite">{{ $notifCount }}</span>
                             @endif
                         </button>
-
-                        <div tabindex="0" class="dropdown-content z-[100] mt-3 w-80 sm:w-96 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-2xl">
-                            <h3 class="font-extrabold text-xs uppercase tracking-wider text-neutral mb-3">Bahan Hampir Habis ({{ $lowStockCount }})</h3>
-                            @forelse($lowStockList as $item)
-                                <a href="{{ route('ingredients.show', $item) }}" class="flex justify-between items-center p-3 rounded-xl hover:bg-base-200 transition-colors">
-                                    <div>
-                                        <div class="font-bold text-xs text-neutral">{{ $item->name }}</div>
-                                        <div class="text-[11px] text-base-content/50">Minimum {{ $item->formatQty($item->min_stock) }}</div>
-                                    </div>
-                                    <span class="badge {{ $item->isNegative() ? 'badge-error' : 'badge-warning' }} text-xs font-bold">{{ $item->formatQty($item->current_stock) }}</span>
-                                </a>
-                            @empty
-                                <p class="text-center text-xs text-base-content/50 py-6">Semua stok masih di atas batas minimum.</p>
-                            @endforelse
+                        <div tabindex="0" class="dropdown-content z-50 mt-2 w-80 max-w-[90vw] rounded-2xl bg-base-100 border border-base-300 shadow-lg p-3">
                             @if($lowStockCount > 0)
-                                <a href="{{ route('ingredients.index', ['low' => 1]) }}" class="btn btn-primary btn-sm w-full mt-3">Lihat semua</a>
+                                <p class="text-xs font-bold uppercase tracking-wider text-base-content/60 px-2 pb-2">Bahan hampir habis ({{ $lowStockCount }})</p>
+                                <ul class="divide-y divide-base-200">
+                                    @foreach($lowStockList as $item)
+                                        <li>
+                                            <a href="{{ route('ingredients.show', $item) }}" class="flex justify-between items-center gap-3 px-2 py-2.5 min-h-11 rounded-lg hover:bg-base-200">
+                                                <span>
+                                                    <span class="block text-sm font-bold">{{ $item->name }}</span>
+                                                    <span class="block text-[11px] text-base-content/50">Minimum {{ $item->formatQty($item->min_stock) }}</span>
+                                                </span>
+                                                <span class="badge {{ $item->isNegative() ? 'badge-error' : 'badge-warning' }} font-bold tabular-nums">{{ $item->formatQty($item->current_stock) }}</span>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                                <a href="{{ route('ingredients.index', ['low' => 1]) }}" class="btn btn-primary btn-sm rounded-lg w-full mt-3">Lihat semua</a>
+                            @endif
+                            @can('manage-inventory')
+                                @if($stuckEvents > 0)
+                                    <p class="text-xs font-bold uppercase tracking-wider text-base-content/60 px-2 pb-2 {{ $lowStockCount > 0 ? 'pt-4' : '' }}">Webhook gagal diproses</p>
+                                    <a href="{{ route('settings.edit') }}" class="flex justify-between items-center gap-3 px-2 py-2.5 min-h-11 rounded-lg hover:bg-base-200">
+                                        <span class="text-sm font-bold">Periksa koneksi POS</span>
+                                        <span class="badge badge-error font-bold tabular-nums">{{ $stuckEvents }}</span>
+                                    </a>
+                                @endif
+                            @endcan
+                            @if($notifCount === 0)
+                                <p class="text-sm text-center text-base-content/60 py-4">Tidak ada notifikasi</p>
                             @endif
                         </div>
                     </div>
-
-                    <div class="dropdown dropdown-end">
-                        <button tabindex="0" role="button" class="flex items-center gap-3 pl-3 border-l border-base-300/80 min-h-11">
-                            <div class="bg-neutral text-neutral-content rounded-xl w-9 h-9 flex items-center justify-center font-black text-xs">
-                                {{ strtoupper(substr($authUser->name, 0, 2)) }}
-                            </div>
-                            <div class="hidden sm:block text-left">
-                                <div class="text-xs font-extrabold text-neutral leading-snug">{{ $authUser->name }}</div>
-                                <div class="text-[10px] text-base-content/50 font-bold uppercase tracking-wider">{{ $authUser->role->label() }}</div>
-                            </div>
-                        </button>
-                        <ul tabindex="0" class="dropdown-content menu z-[100] mt-3 w-48 rounded-2xl border border-base-300 bg-base-100 p-2 shadow-2xl">
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left flex items-center gap-2 min-h-11 text-error font-bold">
-                                        <i data-lucide="log-out" class="w-4 h-4"></i> Keluar
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
+                    <div class="hidden sm:flex flex-col items-end text-xs">
+                        <span class="font-bold text-base-content">{{ $user->name }}</span>
+                        <span class="text-[10px] text-base-content/60 uppercase tracking-widest font-extrabold">{{ $user->role->label() }}</span>
                     </div>
+                    <form action="{{ route('logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline btn-error btn-sm rounded-lg gap-2">
+                            <i data-lucide="log-out" class="w-4 h-4" aria-hidden="true"></i>
+                            Keluar
+                        </button>
+                    </form>
                 </div>
             </nav>
 
-            <main class="p-4 sm:p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
-                @if (session('success'))
-                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between">
-                        <span>{{ session('success') }}</span>
-                        <button type="button" aria-label="Tutup" onclick="this.parentElement.remove()" class="p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold flex items-center justify-between">
-                        <span>{{ session('error') }}</span>
-                        <button type="button" aria-label="Tutup" onclick="this.parentElement.remove()" class="p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    </div>
-                @endif
-
-                @if ($errors->any() && ! $errors->hasAny(['email']))
-                    <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold">
-                        <ul class="list-disc pl-4 space-y-0.5">
-                            @foreach ($errors->all() as $message)
-                                <li>{{ $message }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                @yield('content')
-            </main>
-
-            <footer class="border-t border-base-300 py-4 px-8 bg-base-100/50 text-xs text-base-content/50 flex flex-col sm:flex-row justify-between items-center gap-1">
-                <div>&copy; {{ date('Y') }} <strong>Lokal</strong> — {{ $authUser->outlet?->name }}</div>
-                <div>
-                    @if($authUser->outlet?->last_catalog_sync_at)
-                        Katalog POS disinkronkan {{ $authUser->outlet->last_catalog_sync_at->diffForHumans() }}
-                    @else
-                        Katalog POS belum disinkronkan
+            <main id="main-content" class="flex-1 p-4 md:p-6 overflow-y-auto flex flex-col">
+                <div class="w-full space-y-6">
+                    @if ($errors->any() && ! $errors->hasAny(['email']))
+                        <div class="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold" role="alert">
+                            <ul class="list-disc pl-4 space-y-0.5">
+                                @foreach ($errors->all() as $message)
+                                    <li>{{ $message }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
                     @endif
+
+                    @yield('content')
                 </div>
-            </footer>
+            </main>
         </div>
 
-        <div class="drawer-side z-40 border-r border-base-300/80">
-            <label for="main-drawer" aria-label="Tutup menu" class="drawer-overlay"></label>
-            <div class="flex min-h-full flex-col w-64 bg-base-100 p-4">
-                <div class="flex items-center gap-3 px-3 py-4 border-b border-base-300/80 mb-4">
-                    <div class="w-9 h-9 rounded-xl bg-orange-500 flex items-center justify-center text-white font-extrabold">L</div>
-                    <div>
-                        <span class="font-extrabold text-base text-neutral block leading-tight">Lokal Stock</span>
-                        <span class="text-[10px] text-base-content/50 font-semibold tracking-wider uppercase">{{ $authUser->outlet?->name }}</span>
-                    </div>
+        <div class="drawer-side is-drawer-close:overflow-visible z-20">
+            <label for="my-drawer-4" aria-label="Tutup menu samping" class="drawer-overlay"></label>
+
+            <div class="flex min-h-full flex-col items-start bg-base-100 border-r border-base-300 is-drawer-close:w-14 is-drawer-open:w-64 transition-all duration-300">
+                <div class="flex items-center gap-3 px-4 py-4 w-full is-drawer-close:justify-center border-b border-base-300 h-[65px] shrink-0">
+                    <img src="{{ asset('logo.svg') }}" alt="" class="w-8 h-8 shrink-0" aria-hidden="true">
+                    <span class="font-black text-lg tracking-wider text-base-content is-drawer-close:hidden">STOK</span>
                 </div>
 
-                <ul class="menu w-full space-y-1 text-sm font-medium p-0">
-                    <x-nav-link :href="route('dashboard')" icon="layout-dashboard" :active="request()->routeIs('dashboard')">Dashboard</x-nav-link>
-                    <x-nav-link :href="route('ingredients.index')" icon="package-search" :active="request()->routeIs('ingredients.*')">Bahan Baku</x-nav-link>
-                    @can('manage-inventory')
-                        <x-nav-link :href="route('recipes.index')" icon="chef-hat" :active="request()->routeIs('recipes.*')">Resep</x-nav-link>
-                    @endcan
+                <ul class="menu w-full grow px-2 py-4 space-y-1 font-semibold text-sm flex-nowrap is-drawer-open:overflow-y-auto" aria-label="Navigasi utama">
+                    <li class="menu-title is-drawer-close:hidden">Stok</li>
+                    <x-nav-link route="dashboard" icon="layout-dashboard" label="Dashboard" />
+                    <x-nav-link route="ingredients.index" match="ingredients.*" icon="package-search" label="Bahan Baku" />
+                    <x-nav-link route="stock-receipts.index" match="stock-receipts.*" icon="arrow-down-left" label="Stok Masuk" />
+                    <x-nav-link route="waste.index" match="waste.*" icon="trash-2" label="Waste" />
+                    <x-nav-link route="opnames.index" match="opnames.*" icon="clipboard-check" label="Stok Opname" />
 
-                    <li class="menu-title pt-4 text-[10px] font-extrabold uppercase tracking-widest">Operasional</li>
-                    <x-nav-link :href="route('stock-receipts.index')" icon="arrow-down-left" :active="request()->routeIs('stock-receipts.*')">Stok Masuk</x-nav-link>
-                    <x-nav-link :href="route('waste.index')" icon="trash-2" :active="request()->routeIs('waste.*')">Waste</x-nav-link>
-                    <x-nav-link :href="route('opnames.index')" icon="clipboard-check" :active="request()->routeIs('opnames.*')">Stok Opname</x-nav-link>
                     @can('manage-inventory')
-                        <x-nav-link :href="route('suppliers.index')" icon="truck" :active="request()->routeIs('suppliers.*')">Supplier</x-nav-link>
+                        <li class="menu-title is-drawer-close:hidden">Katalog</li>
+                        <x-nav-link route="recipes.index" match="recipes.*" icon="chef-hat" label="Resep" />
+                        <x-nav-link route="suppliers.index" match="suppliers.*" icon="truck" label="Supplier" />
                     @endcan
 
                     @canany(['view-costs', 'manage-inventory'])
-                        <li class="menu-title pt-4 text-[10px] font-extrabold uppercase tracking-widest">Analitik &amp; Sistem</li>
+                        <li class="menu-title is-drawer-close:hidden">Analitik &amp; Pengaturan</li>
                     @endcanany
                     @can('view-costs')
-                        <x-nav-link :href="route('reports.index')" icon="bar-chart-3" :active="request()->routeIs('reports.*')">Laporan</x-nav-link>
+                        <x-nav-link route="reports.index" match="reports.*" icon="bar-chart-3" label="Laporan" />
                     @endcan
                     @can('manage-inventory')
-                        <x-nav-link :href="route('settings.edit')" icon="plug" :active="request()->routeIs('settings.*')">
-                            Koneksi POS
-                            @if($stuckEvents > 0)
-                                <span class="badge badge-error badge-sm ml-auto text-white font-black">{{ $stuckEvents }}</span>
-                            @endif
-                        </x-nav-link>
+                        <x-nav-link route="settings.edit" match="settings.*" icon="plug" label="Koneksi POS" />
                     @endcan
                 </ul>
+
+                <div class="p-4 border-t border-base-300 w-full flex flex-col gap-3 is-drawer-close:items-center shrink-0">
+                    <div class="flex items-center gap-3 w-full is-drawer-close:justify-center">
+                        <div class="avatar placeholder shrink-0" aria-hidden="true">
+                            <div class="bg-primary text-primary-content rounded-full w-8 flex items-center justify-center">
+                                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                            </div>
+                        </div>
+                        <div class="text-xs is-drawer-close:hidden">
+                            <div class="font-bold text-base-content leading-none">{{ $outletName }}</div>
+                            <div class="text-[10px] text-base-content/60 mt-1">
+                                @if($user->outlet?->last_catalog_sync_at)
+                                    Katalog disinkronkan {{ $user->outlet->last_catalog_sync_at->diffForHumans() }}
+                                @else
+                                    Katalog belum disinkronkan
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     @stack('scripts')
 </body>
-
 </html>

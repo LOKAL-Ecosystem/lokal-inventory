@@ -11,12 +11,12 @@
     </x-slot:actions>
 </x-page-header>
 
-<div class="card-premium overflow-hidden">
-    <table class="table-premium">
-        <thead>
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+    <table class="table">
+        <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
             <tr><th>Tanggal</th><th>Status</th><th class="text-right">Bahan</th><th>Dibuat oleh</th><th>Catatan</th><th></th></tr>
         </thead>
-        <tbody>
+        <tbody class="[&>tr:hover]:bg-base-200/30">
             @forelse($opnames as $opname)
                 <tr>
                     <td class="font-bold">{{ $opname->opname_date->format('d M Y') }}</td>

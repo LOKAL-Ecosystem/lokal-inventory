@@ -12,7 +12,7 @@
 <form method="POST" action="{{ route('stock-receipts.store') }}" class="space-y-6" id="receipt-form">
     @csrf
 
-    <section class="card-premium p-5 grid sm:grid-cols-3 gap-4">
+    <section class="bg-base-100 border border-base-300 rounded-2xl p-5 grid sm:grid-cols-3 gap-4">
         <x-field label="Tanggal" name="received_at">
             <input type="date" name="received_at" value="{{ old('received_at', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required class="input w-full min-h-11 text-sm rounded-xl" />
         </x-field>
@@ -29,10 +29,10 @@
         </x-field>
     </section>
 
-    <section class="card-premium overflow-hidden">
+    <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="table-premium">
-                <thead>
+            <table class="table">
+                <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                     <tr><th class="min-w-56">Bahan</th><th class="min-w-36">Jumlah (satuan beli)</th><th class="min-w-40">Total harga (Rp)</th><th class="text-right min-w-36">Setara</th><th></th></tr>
                 </thead>
                 <tbody id="rows"></tbody>
@@ -86,7 +86,7 @@
             </td>
             <td><input type="number" name="items[${i}][total_price]" min="0" step="1" required class="input w-full min-h-11 text-sm rounded-xl" /></td>
             <td class="text-right text-xs font-bold equivalent">-</td>
-            <td><button type="button" class="btn-action-delete remove" aria-label="Hapus baris"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+            <td><button type="button" class="btn btn-ghost btn-square btn-sm text-error hover:bg-error/10 remove" aria-label="Hapus baris"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
         rows.appendChild(tr);
 
         const select = tr.querySelector('select');

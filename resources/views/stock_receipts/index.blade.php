@@ -9,13 +9,13 @@
     </x-slot:actions>
 </x-page-header>
 
-<div class="card-premium overflow-hidden">
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                 <tr><th>Tanggal</th><th>Supplier</th><th class="text-right">Item</th><th class="text-right">Total</th><th>Dicatat oleh</th><th></th></tr>
             </thead>
-            <tbody>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($receipts as $receipt)
                     <tr>
                         <td class="font-bold">{{ $receipt->received_at->format('d M Y') }}</td>

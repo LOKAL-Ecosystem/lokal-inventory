@@ -11,13 +11,13 @@
     </x-slot:actions>
 </x-page-header>
 
-<div class="card-premium overflow-hidden">
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                 <tr><th>Waktu</th><th>Bahan</th><th class="text-right">Jumlah</th><th>Alasan</th><th>Catatan</th><th>Oleh</th></tr>
             </thead>
-            <tbody>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($movements as $movement)
                     <tr>
                         <td class="text-xs whitespace-nowrap">{{ $movement->created_at->format('d M Y H:i') }}</td>

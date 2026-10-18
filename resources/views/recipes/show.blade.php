@@ -10,31 +10,31 @@
 </x-page-header>
 
 <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">HPP</div>
         <div class="text-2xl font-extrabold mt-1" id="hpp-value">Rp {{ number_format($summary['hpp'], 0, ',', '.') }}</div>
     </div>
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Margin</div>
         <div class="text-2xl font-extrabold mt-1 {{ $summary['margin'] < 0 ? 'text-error' : 'text-success' }}">Rp {{ number_format($summary['margin'], 0, ',', '.') }}</div>
     </div>
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Margin %</div>
         <div class="text-2xl font-extrabold mt-1">{{ $summary['margin_pct'] !== null ? $summary['margin_pct'] . '%' : '-' }}</div>
     </div>
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Porsi tersedia</div>
         <div class="text-2xl font-extrabold mt-1">{{ $portions ?? '-' }}</div>
     </div>
 </section>
 
 {{-- Resep dasar --}}
-<form method="POST" action="{{ route('recipes.update', $product->pos_product_id) }}" class="card-premium overflow-hidden">
+<form method="POST" action="{{ route('recipes.update', $product->pos_product_id) }}" class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     @csrf @method('PUT')
     <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Resep dasar (1 porsi)</h2>
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead><tr><th class="min-w-56">Bahan</th><th class="min-w-40">Takaran</th><th class="text-right">Biaya</th><th></th></tr></thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50"><tr><th class="min-w-56">Bahan</th><th class="min-w-40">Takaran</th><th class="text-right">Biaya</th><th></th></tr></thead>
             <tbody id="recipe-rows"></tbody>
         </table>
     </div>
@@ -45,7 +45,7 @@
 </form>
 
 {{-- Penyesuaian per opsi kustomisasi --}}
-<section class="card-premium overflow-hidden">
+<section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Penyesuaian per opsi kustomisasi</h2>
     <p class="px-5 pt-3 text-[11px] text-base-content/60">Urutan penerapan: ganti bahan → tambah bahan → kalikan takaran.</p>
 
@@ -69,7 +69,7 @@
                                 @endswitch
                                 <form method="POST" action="{{ route('recipes.adjustments.destroy', $adjustment) }}" class="inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" aria-label="Hapus penyesuaian" class="ml-1 text-white/70 hover:text-white"><i data-lucide="x" class="w-3 h-3"></i></button>
+                                    <button type="submit" aria-label="Hapus penyesuaian" class="ml-1 text-base-content/60 hover:text-error"><i data-lucide="x" class="w-3 h-3"></i></button>
                                 </form>
                             </span>
                         @endforeach
@@ -163,7 +163,7 @@
                 <input type="number" name="items[${i}][qty]" min="0.001" step="any" required class="input w-full min-h-11 text-sm rounded-xl" />
                 <span class="text-xs font-bold text-base-content/60 unit"></span></div></td>
             <td class="text-right text-xs font-bold cost">-</td>
-            <td><button type="button" class="btn-action-delete remove" aria-label="Hapus bahan"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+            <td><button type="button" class="btn btn-ghost btn-square btn-sm text-error hover:bg-error/10 remove" aria-label="Hapus bahan"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
         body.appendChild(tr);
 
         const select = tr.querySelector('select');

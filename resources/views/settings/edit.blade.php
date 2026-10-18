@@ -14,7 +14,7 @@
     </x-slot:actions>
 </x-page-header>
 
-<form method="POST" action="{{ route('settings.update') }}" class="card-premium p-5 space-y-4">
+<form method="POST" action="{{ route('settings.update') }}" class="bg-base-100 border border-base-300 rounded-2xl p-5 space-y-4">
     @csrf @method('PUT')
 
     <div class="grid sm:grid-cols-2 gap-4">
@@ -41,23 +41,23 @@
 
     <div class="rounded-xl bg-base-200 p-4 text-xs space-y-1">
         <div class="font-extrabold">URL penerima webhook (isi di Lokal POS)</div>
-        <code class="code-chip break-all">{{ $webhookUrl }}</code>
+        <code class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md break-all">{{ $webhookUrl }}</code>
         <p class="text-base-content/60">Langganan event: <strong>order.confirmed</strong>, <strong>order.voided</strong> (opsional: catalog.updated).</p>
     </div>
 
     <div class="flex justify-end"><button class="btn btn-primary min-h-11 px-8">Simpan</button></div>
 </form>
 
-<section class="card-premium overflow-hidden">
+<section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Webhook terbaru</h2>
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead><tr><th>Diterima</th><th>Event</th><th>Kunci</th><th>Status</th><th></th></tr></thead>
-            <tbody>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50"><tr><th>Diterima</th><th>Event</th><th>Kunci</th><th>Status</th><th></th></tr></thead>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($inbox as $event)
                     <tr>
                         <td class="text-xs whitespace-nowrap">{{ $event->received_at->format('d M H:i:s') }}</td>
-                        <td><span class="code-chip">{{ $event->event_type }}</span></td>
+                        <td><span class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md">{{ $event->event_type }}</span></td>
                         <td class="text-[11px] font-mono break-all max-w-xs">{{ $event->event_id }}</td>
                         <td>
                             @if($event->processed_at) <span class="badge badge-success">Selesai</span>

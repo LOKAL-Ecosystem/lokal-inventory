@@ -14,10 +14,10 @@
 <form method="POST" action="{{ route('opnames.update', $opname) }}" id="count-form">
     @csrf @method('PUT')
 
-    <div class="card-premium overflow-hidden">
+    <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="table-premium">
-                <thead>
+            <table class="table">
+                <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                     <tr>
                         <th>Bahan</th>
                         <th class="text-right">Stok sistem</th>
@@ -25,7 +25,7 @@
                         <th class="text-right">Selisih</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="[&>tr:hover]:bg-base-200/30">
                     @foreach($opname->items->sortBy(fn ($i) => $i->ingredient->name) as $item)
                         @php $diff = $item->difference !== null ? (float) $item->difference : null; @endphp
                         <tr>

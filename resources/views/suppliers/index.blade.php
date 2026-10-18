@@ -11,24 +11,24 @@
     </x-slot:actions>
 </x-page-header>
 
-<div class="card-premium overflow-hidden">
-    <table class="table-premium">
-        <thead>
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+    <table class="table">
+        <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
             <tr><th>Nama</th><th>Kontak</th><th></th></tr>
         </thead>
-        <tbody>
+        <tbody class="[&>tr:hover]:bg-base-200/30">
             @forelse($suppliers as $supplier)
                 <tr>
                     <td class="font-extrabold text-neutral">{{ $supplier->name }}</td>
                     <td class="text-xs">{{ $supplier->contact ?? '-' }}</td>
                     <td class="text-right whitespace-nowrap">
-                        <button type="button" class="btn-action-edit" aria-label="Ubah {{ $supplier->name }}"
+                        <button type="button" class="btn btn-ghost btn-square btn-sm text-primary hover:bg-primary/10" aria-label="Ubah {{ $supplier->name }}"
                             onclick="editSupplier({{ \Illuminate\Support\Js::from($supplier->only(['id', 'name', 'contact'])) }})">
                             <i data-lucide="edit-2" class="w-4 h-4"></i>
                         </button>
                         <form action="{{ route('suppliers.destroy', $supplier) }}" method="POST" class="inline" data-confirm="Hapus supplier {{ $supplier->name }}?">
                             @csrf @method('DELETE')
-                            <button type="submit" class="btn-action-delete" aria-label="Hapus {{ $supplier->name }}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button type="submit" class="btn btn-ghost btn-square btn-sm text-error hover:bg-error/10" aria-label="Hapus {{ $supplier->name }}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </form>
                     </td>
                 </tr>

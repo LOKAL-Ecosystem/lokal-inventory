@@ -12,7 +12,7 @@
     </x-slot:actions>
 </x-page-header>
 
-<form method="GET" class="card-premium p-4 flex flex-col sm:flex-row gap-3">
+<form method="GET" class="bg-base-100 border border-base-300 rounded-2xl p-4 flex flex-col sm:flex-row gap-3">
     <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari menu…" class="input flex-1 min-h-11 text-sm rounded-xl" />
     <label class="flex items-center gap-2 text-xs font-bold min-h-11">
         <input type="checkbox" name="filter" value="no_recipe" class="checkbox checkbox-sm checkbox-primary" @checked(request('filter') === 'no_recipe') onchange="this.form.submit()" />
@@ -21,10 +21,10 @@
     <button class="btn btn-neutral min-h-11">Cari</button>
 </form>
 
-<div class="card-premium overflow-hidden">
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                 <tr>
                     <th>Menu</th>
                     <th class="text-right">Harga jual</th>
@@ -35,7 +35,7 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($rows as $row)
                     @php($p = $row['product'])
                     @php($s = $row['summary'])

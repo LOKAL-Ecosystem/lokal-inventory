@@ -9,12 +9,12 @@
     </x-slot:actions>
 </x-page-header>
 
-<div class="card-premium overflow-hidden">
-    <table class="table-premium">
-        <thead>
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+    <table class="table">
+        <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
             <tr><th>Bahan</th><th class="text-right">Jumlah beli</th><th class="text-right">Satuan dasar</th><th class="text-right">Harga</th><th class="text-right">Per satuan dasar</th></tr>
         </thead>
-        <tbody>
+        <tbody class="[&>tr:hover]:bg-base-200/30">
             @foreach($receipt->items as $item)
                 <tr>
                     <td class="font-extrabold">{{ $item->ingredient->name }}</td>

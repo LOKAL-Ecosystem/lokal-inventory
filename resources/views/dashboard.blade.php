@@ -11,32 +11,32 @@
 </x-page-header>
 
 <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Hampir habis</div>
         <div class="text-3xl font-extrabold {{ $lowStockCount ? 'text-warning' : 'text-success' }} mt-1">{{ $lowStockCount }}</div>
     </div>
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Stok negatif</div>
         <div class="text-3xl font-extrabold {{ $negativeStock->count() ? 'text-error' : 'text-success' }} mt-1">{{ $negativeStock->count() }}</div>
     </div>
-    <div class="card-premium p-4">
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
         <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Menu tanpa resep</div>
         <div class="text-3xl font-extrabold {{ $noRecipe->count() ? 'text-warning' : 'text-success' }} mt-1">{{ $noRecipe->count() }}</div>
     </div>
     @can('view-costs')
-        <div class="card-premium p-4">
+        <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
             <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Nilai stok</div>
             <div class="text-2xl font-extrabold text-neutral mt-1">Rp {{ number_format($stockValue, 0, ',', '.') }}</div>
         </div>
     @else
-        <div class="card-premium p-4">
+        <div class="bg-base-100 border border-base-300 rounded-2xl p-4">
             <div class="text-[11px] font-bold uppercase tracking-wider text-base-content/50">Menu habis otomatis</div>
             <div class="text-3xl font-extrabold {{ $soldOut->count() ? 'text-error' : 'text-success' }} mt-1">{{ $soldOut->count() }}</div>
         </div>
     @endcan
 </section>
 
-<section class="card-premium p-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold">
+<section class="bg-base-100 border border-base-300 rounded-2xl p-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold">
     <span class="flex items-center gap-2">
         <span class="w-2.5 h-2.5 rounded-full {{ $outlet->hasPosConnection() ? 'bg-success' : 'bg-warning' }}"></span>
         Koneksi Lokal POS: {{ $outlet->hasPosConnection() ? 'terhubung' : 'belum diatur' }}
@@ -47,10 +47,10 @@
 </section>
 
 <div class="grid lg:grid-cols-2 gap-6">
-    <section class="card-premium overflow-hidden">
+    <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
         <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Bahan hampir habis</h2>
-        <table class="table-premium">
-            <tbody>
+        <table class="table">
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($lowStock as $item)
                     <tr>
                         <td><a href="{{ route('ingredients.show', $item) }}" class="font-bold text-neutral hover:text-primary">{{ $item->name }}</a></td>
@@ -64,10 +64,10 @@
         </table>
     </section>
 
-    <section class="card-premium overflow-hidden">
+    <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
         <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Menu tanpa resep</h2>
-        <table class="table-premium">
-            <tbody>
+        <table class="table">
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($noRecipe->take(10) as $product)
                     <tr>
                         <td class="font-bold text-neutral">{{ $product->name }}</td>
@@ -86,10 +86,10 @@
     </section>
 
     @if($negativeStock->isNotEmpty())
-        <section class="card-premium overflow-hidden">
+        <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
             <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200 text-error">Stok negatif — perlu opname</h2>
-            <table class="table-premium">
-                <tbody>
+            <table class="table">
+                <tbody class="[&>tr:hover]:bg-base-200/30">
                     @foreach($negativeStock as $item)
                         <tr>
                             <td><a href="{{ route('ingredients.show', $item) }}" class="font-bold text-neutral hover:text-primary">{{ $item->name }}</a></td>
@@ -102,10 +102,10 @@
     @endif
 
     @if($soldOut->isNotEmpty())
-        <section class="card-premium overflow-hidden">
+        <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
             <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Menu ditandai habis (stok tidak cukup)</h2>
-            <table class="table-premium">
-                <tbody>
+            <table class="table">
+                <tbody class="[&>tr:hover]:bg-base-200/30">
                     @foreach($soldOut as $product)
                         <tr><td class="font-bold text-neutral">{{ $product->name }}</td></tr>
                     @endforeach

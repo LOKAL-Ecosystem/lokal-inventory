@@ -13,7 +13,7 @@
     </x-slot:actions>
 </x-page-header>
 
-<form method="GET" class="card-premium p-4 flex flex-col sm:flex-row gap-3">
+<form method="GET" class="bg-base-100 border border-base-300 rounded-2xl p-4 flex flex-col sm:flex-row gap-3">
     <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari bahan…" autofocus class="input flex-1 min-h-11 text-sm rounded-xl" />
     <select name="category" class="select min-h-11 text-sm rounded-xl sm:w-56" onchange="this.form.submit()">
         <option value="">Semua kategori</option>
@@ -28,10 +28,10 @@
     <button class="btn btn-neutral min-h-11">Cari</button>
 </form>
 
-<div class="card-premium overflow-hidden">
+<div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="table-premium">
-            <thead>
+        <table class="table">
+            <thead class="bg-base-200/20 text-[10px] uppercase tracking-wider font-extrabold text-base-content/50">
                 <tr>
                     <th>Bahan</th>
                     <th>Kategori</th>
@@ -43,7 +43,7 @@
                     @can('manage-inventory')<th></th>@endcan
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="[&>tr:hover]:bg-base-200/30">
                 @forelse($ingredients as $item)
                     <tr class="{{ $item->is_active ? '' : 'opacity-50' }}">
                         <td><a href="{{ route('ingredients.show', $item) }}" class="font-extrabold text-neutral hover:text-primary">{{ $item->name }}</a></td>
@@ -76,13 +76,13 @@
                                 ];
                             @endphp
                             <td class="text-right whitespace-nowrap">
-                                <button type="button" class="btn-action-edit" aria-label="Ubah {{ $item->name }}"
+                                <button type="button" class="btn btn-ghost btn-square btn-sm text-primary hover:bg-primary/10" aria-label="Ubah {{ $item->name }}"
                                     onclick="editIngredient({{ \Illuminate\Support\Js::from($editData) }})">
                                     <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 </button>
                                 <form action="{{ route('ingredients.destroy', $item) }}" method="POST" class="inline" data-confirm="Hapus / nonaktifkan {{ $item->name }}?">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn-action-delete" aria-label="Hapus {{ $item->name }}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    <button type="submit" class="btn btn-ghost btn-square btn-sm text-error hover:bg-error/10" aria-label="Hapus {{ $item->name }}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                 </form>
                             </td>
                         @endcan
