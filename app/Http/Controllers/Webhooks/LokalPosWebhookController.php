@@ -94,7 +94,12 @@ class LokalPosWebhookController extends Controller
             if ($job = self::JOBS[$inbox->event_type] ?? null) {
                 $job::dispatch($outlet->id, $inbox->id);
             } elseif ($inbox->event_type === 'catalog.updated') {
-                SyncCatalogFromPos::dispatch($outlet->id, $inbox->id);
+                $productIds = array_values(array_filter(
+                    (array) ($inbox->payload['data']['product_ids'] ?? []),
+                    fn ($id) => is_int($id) || ctype_digit((string) $id)
+                ));
+
+                SyncCatalogFromPos::dispatch($outlet->id, $inbox->id, array_map('intval', $productIds));
             } else {
                 // order.created, payment.paid, dll.: tidak ada efek ke stok.
                 $inbox->forceFill(['processed_at' => now()])->save();

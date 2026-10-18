@@ -58,7 +58,8 @@
                         <td class="text-center">
                             @if(! $s['has_recipe']) <span class="badge badge-warning">Tanpa resep</span>
                             @elseif($p->auto_unavailable) <span class="badge badge-error">Habis (stok)</span>
-                            @elseif(! $p->is_available) <span class="badge badge-neutral">Habis (manual)</span>
+                            @elseif($p->availability_source === 'manual') <span class="badge badge-neutral" title="Ditandai habis oleh pemilik di POS. Tidak diubah otomatis oleh stok.">Habis (manual di POS)</span>
+                            @elseif(! $p->is_available) <span class="badge badge-neutral">Habis di POS</span>
                             @else <span class="badge badge-success">Tersedia</span> @endif
                         </td>
                         <td class="text-right"><a href="{{ route('recipes.show', $p->pos_product_id) }}" class="btn btn-ghost btn-sm min-h-11">Atur</a></td>

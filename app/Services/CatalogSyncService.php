@@ -21,13 +21,14 @@ class CatalogSyncService
     }
 
     /**
+     * @param  array<int>  $productIds  produk terdampak dari webhook catalog.updated; kosong = hitung ulang semua
      * @return array{products: int, modifiers: int}
      */
-    public function sync(Outlet $outlet, ?array $catalog = null): array
+    public function sync(Outlet $outlet, ?array $catalog = null, array $productIds = []): array
     {
         $catalog ??= LokalPosClient::for($outlet)->catalog();
 
-        return $this->current->run($outlet, function () use ($outlet, $catalog) {
+        return $this->current->run($outlet, function () use ($outlet, $catalog, $productIds) {
             $now = now();
             $productCount = 0;
             $modifierCount = 0;
@@ -40,12 +41,16 @@ class CatalogSyncService
                         'category' => $row['category'] ?? $product->category,
                         'price' => (int) ($row['price'] ?? 0),
                         'is_available' => (bool) ($row['is_available'] ?? true),
+                        'availability_source' => $row['availability_source'] ?? null,
                         'synced_at' => $now,
                     ]);
 
                     // Nilai terbaru dari POS jadi acuan; tanda habis otomatis dihitung ulang di bawah.
-                    if ($product->is_available) {
+                    // Habis manual (milik pemilik) bukan habis karena stok.
+                    if ($product->is_available || $product->availability_source === 'manual') {
                         $product->auto_unavailable = false;
+                    } elseif ($product->availability_source === 'inventory') {
+                        $product->auto_unavailable = true;
                     }
 
                     $product->save();
@@ -87,8 +92,11 @@ class CatalogSyncService
                 $outlet->forceFill(['last_catalog_sync_at' => $now])->save();
             });
 
-            // Status ketersediaan dari POS bisa berbeda dari hitungan stok: samakan lagi.
-            $this->availability->refreshAll();
+            // Status ketersediaan dari POS bisa berbeda dari hitungan stok: samakan lagi
+            // (hanya produk terdampak bila webhook menyebutkannya).
+            $productIds === []
+                ? $this->availability->refreshAll()
+                : $this->availability->refreshProducts(collect($productIds)->map(fn ($id) => (int) $id));
 
             return ['products' => $productCount, 'modifiers' => $modifierCount];
         });

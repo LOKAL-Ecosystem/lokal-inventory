@@ -62,6 +62,9 @@ class ReconcileOrders implements ShouldQueue
             }
 
             $outlet->forceFill(['last_reconciled_at' => $startedAt])->save();
+
+            // Samakan juga lonceng stok di POS (dikirim ulang walau daftar tidak berubah).
+            PushStockAlerts::dispatch($outlet->id, force: true);
         });
     }
 }

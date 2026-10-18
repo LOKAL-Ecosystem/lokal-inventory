@@ -70,16 +70,21 @@ class MenuAvailabilityService
             && (float) $item->ingredient->current_stock >= (float) $item->qty);
 
         $changed = false;
+        $manual = $product->availability_source === 'manual';
 
-        if (! $sufficient && $product->is_available) {
+        if ($manual) {
+            // Tanda habis manual dari pemilik di POS tidak pernah disentuh (tidak ditandai tersedia, tidak dikirim ulang).
+        } elseif (! $sufficient && $product->is_available) {
             // Habis karena stok. Bila sudah habis (manual di POS), tidak disentuh.
             $product->auto_unavailable = true;
             $product->is_available = false;
+            $product->availability_source = 'inventory';
             $changed = true;
         } elseif ($sufficient && $product->auto_unavailable) {
             // Kembali tersedia, hanya untuk tanda habis yang kita pasang sendiri.
             $product->auto_unavailable = false;
             $product->is_available = true;
+            $product->availability_source = null;
             $changed = true;
         }
 

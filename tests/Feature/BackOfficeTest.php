@@ -165,6 +165,9 @@ it('tes koneksi dan sinkron katalog memakai API Lokal POS', function () {
                 'modifier_groups' => [['id' => 3, 'name' => 'Ukuran', 'modifiers' => [['id' => 5, 'name' => 'Large', 'price_delta' => 5000]]]],
             ]],
         ]]),
+        'pos.test/api/v1/orders*' => \Illuminate\Support\Facades\Http::response(['success' => true, 'data' => []]),
+        'pos.test/api/v1/products/0/availability' => \Illuminate\Support\Facades\Http::response(['message' => 'not found'], 404),
+        'pos.test/api/v1/stock-alerts' => \Illuminate\Support\Facades\Http::response(['message' => 'invalid'], 422),
     ]);
     $this->actingAs($this->owner);
 

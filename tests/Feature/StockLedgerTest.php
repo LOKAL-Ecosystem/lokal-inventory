@@ -174,7 +174,7 @@ it('menandai menu habis hanya saat status berubah, dan tersedia lagi setelah sto
     $deduct = app(StockDeductionService::class);
 
     $deduct->processConfirmed(['order_id' => 'a1', 'items' => [F::line(1, 1)]]); // 22 -> masih cukup
-    Queue::assertNothingPushed();
+    Queue::assertNotPushed(PushAvailabilityToPos::class);
 
     $deduct->processConfirmed(['order_id' => 'a2', 'items' => [F::line(1, 1)]]); // 4 -> habis
     Queue::assertPushed(PushAvailabilityToPos::class, 1);
@@ -197,7 +197,7 @@ it('tidak menimpa tanda habis manual dari POS', function () {
     F::recipe(1, [$beans->id => 18]);
 
     app(MenuAvailabilityService::class)->refreshAll();
-    Queue::assertNothingPushed();
+    Queue::assertNotPushed(PushAvailabilityToPos::class);
     expect($product->fresh())->auto_unavailable->toBeFalse()->is_available->toBeFalse();
 
     // Stok cukup & tidak ada tanda otomatis: tetap habis (manual).

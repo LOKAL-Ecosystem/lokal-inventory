@@ -78,13 +78,16 @@ class StockDeductionService
 
         DB::transaction(function () use ($order, &$created, &$touched) {
             foreach ($order['items'] as $index => $item) {
-                $sourceId = "{$order['uuid']}#{$index}";
+                // Kontrak v2.1: id baris pesanan dari POS. Format lama "{uuid}#{index}" tetap dikenali
+                // supaya pesanan yang sudah tercatat tidak terpotong dua kali.
+                $legacyId = "{$order['uuid']}#{$index}";
+                $sourceId = ($item['item_id'] ?? null) !== null ? "{$order['uuid']}#item:{$item['item_id']}" : $legacyId;
 
                 // Satu baris pesanan hanya sekali, apa pun perubahan resep sesudahnya.
                 $already = StockMovement::query()
                     ->where('type', StockMovementType::Sale->value)
                     ->where('source_type', self::SOURCE_TYPE)
-                    ->where('source_id', $sourceId)
+                    ->whereIn('source_id', array_unique([$sourceId, $legacyId]))
                     ->exists();
 
                 if ($already || $item['product_id'] === null) {

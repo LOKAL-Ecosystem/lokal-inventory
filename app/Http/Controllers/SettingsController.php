@@ -29,6 +29,7 @@ class SettingsController extends Controller
             'maskedKey' => Outlet::mask($outlet->pos_api_key),
             'maskedSecret' => Outlet::mask($outlet->webhook_secret),
             'webhookUrl' => route('webhooks.lokal-pos'),
+            'scopes' => LokalPosClient::SCOPES,
             'inbox' => WebhookInbox::latest('received_at')->latest('id')->limit(25)->get(),
         ]);
     }
@@ -59,15 +60,22 @@ class SettingsController extends Controller
 
     public function test(Request $request): RedirectResponse
     {
+        $client = LokalPosClient::for($request->user()->outlet);
+
         try {
-            $catalog = LokalPosClient::for($request->user()->outlet)->catalog();
+            $results = $client->probeScopes();
         } catch (Throwable $e) {
             return back()->with('error', 'Koneksi gagal: ' . $e->getMessage());
         }
 
-        $count = count($catalog['products'] ?? []);
+        $missing = collect($results)->reject(fn ($r) => $r['ok'])->keys();
+        $flash = ['scope_results' => $results];
 
-        return back()->with('success', "Terhubung ke {$catalog['outlet']['name']}. {$count} produk ditemukan.");
+        if ($missing->isEmpty()) {
+            return back()->with($flash)->with('success', 'Terhubung ke Lokal POS. Semua scope token tersedia.');
+        }
+
+        return back()->with($flash)->with('error', 'Ada scope yang belum berfungsi: ' . $missing->implode(', ') . '.');
     }
 
     public function sync(Request $request, CatalogSyncService $sync): RedirectResponse

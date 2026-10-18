@@ -31,7 +31,7 @@
     </x-field>
 
     <div class="grid sm:grid-cols-2 gap-4">
-        <x-field label="API key (X-Api-Key)" name="pos_api_key" :hint="$maskedKey ? 'Tersimpan: ' . $maskedKey . '. Kosongkan bila tidak diubah.' : 'Scope: catalog:read, orders:read.'">
+        <x-field label="API key (X-Api-Key)" name="pos_api_key" :hint="$maskedKey ? 'Tersimpan: ' . $maskedKey . '. Kosongkan bila tidak diubah.' : 'Token API dengan 4 scope di bawah.'">
             <input type="password" name="pos_api_key" autocomplete="off" placeholder="lkl_…" class="input w-full min-h-11 text-sm rounded-xl" />
         </x-field>
         <x-field label="Webhook secret" name="webhook_secret" :hint="$maskedSecret ? 'Tersimpan: ' . $maskedSecret . '. Kosongkan bila tidak diubah.' : 'whsec_… dari Integrasi → Webhook keluar.'">
@@ -42,11 +42,35 @@
     <div class="rounded-xl bg-base-200 p-4 text-xs space-y-1">
         <div class="font-extrabold">URL penerima webhook (isi di Lokal POS)</div>
         <code class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md break-all">{{ $webhookUrl }}</code>
-        <p class="text-base-content/60">Langganan event: <strong>order.confirmed</strong>, <strong>order.voided</strong> (opsional: catalog.updated).</p>
+        <p class="text-base-content/60">Langganan event: <strong>order.confirmed</strong>, <strong>order.voided</strong>, dan <strong>catalog.updated</strong> (katalog dan ketersediaan menu).</p>
     </div>
 
     <div class="flex justify-end"><button class="btn btn-primary min-h-11 px-8">Simpan</button></div>
 </form>
+
+<section class="bg-base-100 border border-base-300 rounded-2xl p-5 space-y-3">
+    <div>
+        <h2 class="font-extrabold text-sm">Scope token API</h2>
+        <p class="text-xs text-base-content/60">Buat token di Integrasi → Token API di Lokal POS dengan scope berikut, lalu tekan "Tes koneksi".</p>
+    </div>
+    <ul class="divide-y divide-base-200">
+        @foreach($scopes as $scope => $purpose)
+            @php($result = session('scope_results')[$scope] ?? null)
+            <li class="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                <div>
+                    <span class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md">{{ $scope }}</span>
+                    <span class="text-xs text-base-content/60 ml-2">{{ $purpose }}</span>
+                </div>
+                @if($result)
+                    <span class="badge {{ $result['ok'] ? 'badge-success' : 'badge-error' }}" role="status">{{ $result['ok'] ? 'OK' : 'Gagal' }}</span>
+                    @unless($result['ok'])<span class="basis-full text-[11px] text-error">{{ $result['message'] }}</span>@endunless
+                @else
+                    <span class="text-[11px] text-base-content/50">Belum dites</span>
+                @endif
+            </li>
+        @endforeach
+    </ul>
+</section>
 
 <section class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Webhook terbaru</h2>

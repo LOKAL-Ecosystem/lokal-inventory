@@ -4,7 +4,7 @@ Dokumen ini adalah konteks proyek untuk developer dan AI coding assistant yang b
 
 > Nama tabel, kolom, enum, event, endpoint, dan class di dokumen ini adalah **usulan**. Selalu cek kode yang sudah ada lebih dulu dan ikuti konvensi yang sudah dipakai di repo bila berbeda.
 >
-> **Kontrak integrasi dengan `lokal_pos` ada di `WEBHOOK_CONTRACT.md` (v2) milik repo `lokal_pos`.** Bila nama event, field payload, atau endpoint di dokumen ini berbeda dengan kontrak tersebut, **kontrak yang benar**. Jangan mengubah kontrak dari sisi repo ini.
+> **Kontrak integrasi dengan `lokal_pos` ada di `WEBHOOK_CONTRACT.md` (v2.2; fitur v2.1 dipakai di sini) milik repo `lokal_pos`.** Bila nama event, field payload, atau endpoint di dokumen ini berbeda dengan kontrak tersebut, **kontrak yang benar**. Jangan mengubah kontrak dari sisi repo ini.
 
 ---
 
@@ -38,7 +38,7 @@ Posisi di paket langganan: Lokal Stock masuk paket **Pro** (Dasar = POS + Menu).
 ```
 lokal_pos ──(webhook: pesanan lunas / void, katalog berubah)──▶ lokal-inventory
 lokal_pos ◀──(REST /api/v1, header X-Api-Key: baca katalog & pesanan)── lokal-inventory
-lokal_pos ◀──(REST: ubah ketersediaan menu)── lokal-inventory   ← perlu ditambahkan ke kontrak, lihat §11
+lokal_pos ◀──(PATCH /products/{id}/availability, PUT /stock-alerts)── lokal-inventory   ← kontrak v2.1
 ```
 
 ### Yang diterima dari `lokal_pos` (webhook)
@@ -62,7 +62,7 @@ Status pesanan di `lokal_pos`: `awaiting_payment` → `confirmed`, atau `cancell
 - Perubahan **ketersediaan menu** (tandai habis / tersedia lagi) saat bahan tidak cukup / cukup lagi.
 - Peringatan **stok minimum** untuk lonceng notifikasi di header POS (saat ini lonceng POS hanya berisi menu bertanda habis).
 
-Keduanya **belum ada** di kontrak `/api/v1` saat dokumen ini ditulis. Lihat §11.
+Keduanya ada di kontrak v2.1: `PATCH /api/v1/products/{id}/availability` (scope `catalog:availability`, body `{is_available, source: "inventory"}`; POS menjawab `{is_available, availability_source, applied}` dan tidak pernah menimpa tanda habis `manual`) dan `PUT /api/v1/stock-alerts` (scope `stock-alerts:write`, daftar **lengkap** `{alerts: [{key, name, current, min, unit}]}`, bukan selisih). Token API butuh empat scope: `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write` (halaman Koneksi POS menampilkan hasil tes per scope).
 
 ---
 
@@ -128,7 +128,7 @@ Belum diputuskan apakah memakai akun terpisah atau masuk lewat akun `lokal_pos` 
 
 - `outlets`: nama, `pos_outlet_id`, `pos_base_url`, `pos_api_key` (**terenkripsi**), `webhook_secret` (**terenkripsi**), `last_catalog_sync_at`.
 - `users`: `outlet_id`, `role` (owner/cashier), nama, email, password.
-- `pos_products`: `pos_product_id`, nama, kategori, harga jual (integer rupiah), `is_available` (nilai terakhir dari POS), `synced_at`. **Hanya cache, jangan diedit dari repo ini.**
+- `pos_products`: `pos_product_id`, nama, kategori, harga jual (integer rupiah), `is_available` (nilai terakhir dari POS), `availability_source` (`null` | `manual` | `inventory`, dari POS), `synced_at`. **Hanya cache, jangan diedit dari repo ini.**
 - `pos_modifier_groups`, `pos_modifiers`: `pos_modifier_id`, nama, `price_delta`, `synced_at`.
 - `webhook_inbox`: `event_id` (unik), `event_type`, `payload` (JSON), `received_at`, `processed_at`, `attempts`, `last_error`.
 
@@ -141,7 +141,7 @@ Belum diputuskan apakah memakai akun terpisah atau masuk lewat akun `lokal_pos` 
 
 ### Pergerakan stok
 
-- `stock_movements`: **ledger append-only**. `ingredient_id`, `type`, `qty` (positif = masuk, negatif = keluar, satuan dasar), `unit_cost` (untuk `purchase`), `source_type` + `source_id` (mis. item pesanan POS, baris stok masuk, baris opname), `pos_order_uuid` (bila dari pesanan), `reason` (untuk waste), `created_by`, `created_at`. **Tidak pernah di-update atau dihapus**; koreksi selalu lewat pergerakan baru.
+- `stock_movements`: **ledger append-only**. `ingredient_id`, `type`, `qty` (positif = masuk, negatif = keluar, satuan dasar), `unit_cost` (untuk `purchase`), `source_type` + `source_id` (mis. item pesanan POS, baris stok masuk, baris opname; item pesanan POS memakai `"{uuid}#item:{item_id}"` dari `item_id` kontrak v2.1, sedangkan format lama `"{uuid}#{index}"` tetap dikenali supaya data lama tidak terpotong dua kali), `pos_order_uuid` (bila dari pesanan), `reason` (untuk waste), `created_by`, `created_at`. **Tidak pernah di-update atau dihapus**; koreksi selalu lewat pergerakan baru.
 - Unique constraint untuk idempotensi: (`outlet_id`, `type`, `source_type`, `source_id`, `ingredient_id`).
 - `suppliers`: nama, kontak (sederhana).
 - `stock_receipts` + `stock_receipt_items` (stok masuk / belanja): tanggal, supplier, item (bahan, jumlah dalam satuan beli, harga total atau per satuan beli).
@@ -254,11 +254,11 @@ Margin %   = margin / harga jual
 
 - Sebuah produk dianggap **habis** bila salah satu bahan di resep dasarnya tidak cukup untuk **satu porsi** (stok < takaran resep dasar).
 - Hitung ulang setelah setiap pergerakan stok yang menyentuh bahan resep, lalu kirim perubahan (habis ↔ tersedia) ke `lokal_pos`. Kirim **hanya saat status berubah**, bukan setiap pergerakan.
-- Tanda habis manual dari pemilik di POS tetap berlaku. Lokal-inventory tidak boleh menimpa produk yang ditandai habis manual menjadi tersedia (perlu penanda sumber di kontrak, lihat §11).
+- Tanda habis manual dari pemilik di POS tetap berlaku. Lokal-inventory tidak boleh menimpa produk yang ditandai habis manual menjadi tersedia (penanda `availability_source` dari kontrak v2.1). Bila POS menjawab `manual`, nilai itu disimpan di `pos_products`, produk tidak dihitung "habis karena stok", dan Inventory tidak mencoba menandai tersedia lagi; Resep menampilkannya sebagai "Habis (manual di POS)".
 
 ### Peringatan stok minimum
 
-- Bahan dengan stok ≤ `min_stock` muncul di daftar "hampir habis" di dashboard lokal-inventory dan (setelah kontrak tersedia) dikirim ke lonceng notifikasi POS.
+- Bahan dengan stok ≤ `min_stock` muncul di daftar "hampir habis" di dashboard lokal-inventory dan dikirim ke lonceng notifikasi POS lewat `PUT /stock-alerts` (job `PushStockAlerts`, ber-queue dengan retry). Dikirim setiap pergerakan stok menyentuh bahan yang ada di daftar (sebelum atau sesudah), atau saat bahan diubah/dinonaktifkan; job menghitung daftar lengkap dan melewati kiriman bila hash-nya sama dengan yang terakhir berhasil. Rekonsiliasi berkala mengirim ulang paksa.
 
 ### Hak akses
 
@@ -347,9 +347,9 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 
 ## 12. Pertanyaan terbuka
 
-- **Kontrak `lokal_pos` untuk ketersediaan menu**: endpoint untuk menandai habis/tersedia, dan penanda sumber (manual vs otomatis) supaya tanda manual tidak tertimpa.
-- **Kontrak untuk peringatan stok minimum** ke lonceng notifikasi POS (push dari inventory, atau POS menarik dari inventory).
-- **Isi payload webhook pesanan**: apakah item, `pos_product_id`, opsi kustomisasi, dan qty sudah lengkap, atau inventory harus mengambil detail lewat API.
+- ~~**Kontrak `lokal_pos` untuk ketersediaan menu**~~ **Terjawab (v2.1)**: `PATCH /products/{id}/availability` dengan penanda `availability_source`.
+- ~~**Kontrak untuk peringatan stok minimum**~~ **Terjawab (v2.1)**: Inventory mendorong daftar lengkap lewat `PUT /stock-alerts`; POS hanya menyimpan dan menampilkan.
+- ~~**Isi payload webhook pesanan**~~ **Terjawab (v2/v2.1)**: payload memuat `items[]` lengkap (`item_id`, `product_id`, `quantity`, `modifiers[].modifier_id`); REST `GET /orders` memuat `modifier_id` juga. Pencocokan opsi lewat nama tinggal cadangan untuk POS lama. `catalog.updated` membawa `product_ids` terdampak.
 - **Autentikasi pengguna**: akun terpisah atau masuk lewat akun `lokal_pos` (SSO).
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
 - **Pemeriksaan paket langganan** (Pro) dilakukan di mana.

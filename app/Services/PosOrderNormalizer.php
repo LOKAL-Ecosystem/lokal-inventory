@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Menyeragamkan data pesanan dari dua sumber: payload webhook (order_id, modifiers[].modifier_id)
- * dan REST GET /orders (id, modifiers tanpa modifier_id). Bila modifier_id tidak ada, opsi dicocokkan
- * lewat nama dengan cache katalog produk tersebut.
+ * dan REST GET /orders (items[].id, modifiers[].modifier_id sejak kontrak v2.1). Bila modifier_id
+ * tidak ada (POS lama), opsi dicocokkan lewat nama dengan cache katalog produk sebagai cadangan.
  */
 class PosOrderNormalizer
 {
     /**
      * @param  array<string, mixed>  $data
-     * @return array{uuid: string|null, status: string|null, items: array<int, array{product_id: int|null, name: string, quantity: float, modifier_ids: array<int>}>}
+     * @return array{uuid: string|null, status: string|null, items: array<int, array{item_id: int|null, product_id: int|null, name: string, quantity: float, modifier_ids: array<int>}>}
      */
     public function normalize(array $data): array
     {
@@ -26,6 +26,7 @@ class PosOrderNormalizer
             $productId = isset($item['product_id']) ? (int) $item['product_id'] : null;
 
             $items[] = [
+                'item_id' => isset($item['item_id']) || isset($item['id']) ? (int) ($item['item_id'] ?? $item['id']) : null,
                 'product_id' => $productId,
                 'name' => (string) ($item['name'] ?? ''),
                 'price' => (int) ($item['unit_price'] ?? 0),

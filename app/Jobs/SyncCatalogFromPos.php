@@ -22,7 +22,8 @@ class SyncCatalogFromPos implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(public int $outletId, public ?int $inboxId = null)
+    /** @param  array<int>  $productIds  dari payload catalog.updated; kosong = semua */
+    public function __construct(public int $outletId, public ?int $inboxId = null, public array $productIds = [])
     {
     }
 
@@ -34,7 +35,7 @@ class SyncCatalogFromPos implements ShouldQueue
             $inbox = $this->inboxId ? WebhookInbox::find($this->inboxId) : null;
 
             try {
-                $sync->sync($outlet);
+                $sync->sync($outlet, null, $this->productIds);
             } catch (Throwable $e) {
                 $inbox?->forceFill(['last_error' => mb_substr($e->getMessage(), 0, 1000)])->save();
 

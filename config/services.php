@@ -33,8 +33,6 @@ return [
 
     'lokal_pos' => [
         'timeout' => env('LOKAL_POS_TIMEOUT', 10),
-        // Endpoint ubah ketersediaan menu belum ada di kontrak v2. Isi, mis. /products/{id}/availability, bila sudah ada.
-        'availability_endpoint' => env('LOKAL_POS_AVAILABILITY_ENDPOINT'),
     ],
 
 ];

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\StockMovementType;
 use App\Enums\WasteReason;
+use App\Jobs\PushStockAlerts;
 use App\Models\Ingredient;
 use App\Models\StockMovement;
 use Illuminate\Database\QueryException;
@@ -86,6 +87,13 @@ class StockService
 
             $locked->current_stock = round($stockBefore + $qty, 3);
             $locked->save();
+
+            // Daftar "hampir habis" (anggota maupun angka stoknya) hanya berubah bila bahan ada di daftar
+            // sebelum atau sesudah pergerakan ini. Job menghitung daftar penuh dan melewati kiriman yang sama.
+            $min = (float) $locked->min_stock;
+            if ($locked->is_active && ($stockBefore <= $min || (float) $locked->current_stock <= $min)) {
+                PushStockAlerts::dispatch($locked->outlet_id)->afterCommit();
+            }
 
             return $movement;
         });

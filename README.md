@@ -1,4 +1,4 @@
-# Lokal Inventory
+﻿# Lokal Inventory
 
 [![Laravel Framework](https://img.shields.io/badge/Laravel-10.x-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
@@ -22,6 +22,8 @@
 - 📒 **Ledger append-only** (`stock_movements`): cache `current_stock` diperbarui dalam transaksi yang sama, bisa dihitung ulang dengan `php artisan inventory:rebuild-stock`.
 - 💰 **Biaya**: `avg_cost` rata-rata tertimbang saat stok masuk, HPP & margin per menu, nilai stok.
 - 🔁 **Ketersediaan menu**: menu ditandai habis saat bahan tidak cukup (hanya dikirim saat status berubah, tanda habis manual di POS tidak ditimpa).
+- 🔔 **Peringatan stok ke POS**: daftar bahan hampir habis dikirim lewat `PUT /stock-alerts` (kontrak v2.1) bila daftarnya berubah.
+- 🛡️ **Anti kiriman ganda**: form stok memakai token idempotensi sekali pakai; tombol dikunci saat menyimpan.
 - 📋 **Stok masuk, waste, opname**, supplier, laporan (CSV & PDF), peran pemilik/kasir, multi-outlet (global scope `BelongsToOutlet`).
 - ⏱️ **Scheduler**: sinkron katalog tiap jam dan rekonsiliasi pesanan tiap 15 menit (`php artisan schedule:work`).
 
@@ -173,11 +175,10 @@ QUEUE_CONNECTION=database
 
 # Opsional
 LOKAL_POS_TIMEOUT=10
-LOKAL_POS_AVAILABILITY_ENDPOINT=   # belum ada di kontrak v2; kosong = perubahan ketersediaan hanya dicatat di log
 ```
 
 Koneksi ke Lokal POS (URL, API key, webhook secret) **tidak** diatur lewat `.env`, melainkan per outlet di halaman **Koneksi POS** (disimpan terenkripsi).
-Isi URL webhook yang tampil di halaman itu pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed` dan `order.voided`.
+Isi URL webhook yang tampil di halaman itu pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed`, `order.voided`, dan `catalog.updated`; token API butuh scope `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write`.
 
 Akun demo setelah `php artisan migrate --seed`: `admin@lokal.com` (pemilik) dan `kasir@lokal.com` (kasir), kata sandi `password`.
 

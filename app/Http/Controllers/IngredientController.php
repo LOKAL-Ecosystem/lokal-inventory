@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\BaseUnit;
 use App\Enums\StockMovementType;
 use App\Http\Requests\IngredientRequest;
+use App\Jobs\PushStockAlerts;
 use App\Models\Ingredient;
 use App\Models\IngredientCategory;
 use App\Services\MenuAvailabilityService;
@@ -42,6 +43,7 @@ class IngredientController extends Controller
     public function store(IngredientRequest $request): RedirectResponse
     {
         $ingredient = Ingredient::create($this->payload($request));
+        PushStockAlerts::dispatch($ingredient->outlet_id)->afterCommit();
 
         return redirect()->route('ingredients.index')->with('success', "Bahan {$ingredient->name} ditambahkan.");
     }
@@ -49,6 +51,7 @@ class IngredientController extends Controller
     public function update(IngredientRequest $request, Ingredient $ingredient, MenuAvailabilityService $availability): RedirectResponse
     {
         $ingredient->update($this->payload($request) + ['is_active' => $request->boolean('is_active')]);
+        PushStockAlerts::dispatch($ingredient->outlet_id)->afterCommit();
 
         return redirect()->route('ingredients.index')->with('success', "Bahan {$ingredient->name} diperbarui.");
     }
@@ -58,12 +61,14 @@ class IngredientController extends Controller
         // Ledger tidak boleh kehilangan referensi: bahan yang sudah punya pergerakan atau dipakai resep dinonaktifkan.
         if ($ingredient->movements()->exists() || $ingredient->recipeItems()->exists()) {
             $ingredient->update(['is_active' => false]);
+            PushStockAlerts::dispatch($ingredient->outlet_id)->afterCommit();
 
             return redirect()->route('ingredients.index')
                 ->with('success', "Bahan {$ingredient->name} sudah punya riwayat/resep, jadi dinonaktifkan (tidak dihapus).");
         }
 
         $ingredient->delete();
+        PushStockAlerts::dispatch($ingredient->outlet_id)->afterCommit();
 
         return redirect()->route('ingredients.index')->with('success', 'Bahan dihapus.');
     }

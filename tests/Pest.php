@@ -17,4 +17,7 @@ uses(
     RefreshDatabase::class,
 )->in('Feature');
 
+// Tidak ada permintaan HTTP sungguhan ke lokal_pos dari test: semua harus lewat Http::fake().
+beforeEach(fn () => \Illuminate\Support\Facades\Http::preventStrayRequests())->in('Feature');
+
 uses(Tests\TestCase::class)->in('Unit');
