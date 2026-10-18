@@ -12,15 +12,18 @@
 
 ## Key Features
 
-- 📦 **Raw Material & Item Management**: Complete tracking of inventory stock items, units of measurement, categories, and supplier records.
-- 🍳 **Recipe & BOM (Bill of Materials) Management**: Map POS products to multi-ingredient recipes. Supports base product recipes as well as custom modifier adjustments (e.g. extra cheese, syrup modifiers).
-- 🔗 **Lokal-POS Integration Mapping**: Interactive dashboard to map incoming POS Product IDs to your internal inventory items.
-- ⚡ **Real-time Webhook Receiver**: Dedicated API endpoints (`/api/webhooks/pos` & `/api/v1/webhooks/pos`) listening for order updates.
-- 🛡️ **HMAC Signature Verification**: Secure webhook ingestion using HMAC SHA256 signature verification middleware to ensure incoming payloads are authentic.
-- 🧩 **Idempotency Safeguard**: Tracks incoming event logs (`WebhookEvent`) via idempotency keys to prevent duplicate deductions from retried webhooks.
-- ⚙️ **Queue-Based Stock Deduction**: Decoupled background processing (`ProcessPosWebhookJob`) guarantees fast webhook responses to the POS without delaying the checkout flow.
-- 📈 **Detailed Stock Movement History**: Comprehensive ledger logs for every transaction (stock-in, manual adjustments, and POS deductions) with initial/final balance mapping.
-- 🔔 **Low Stock & Valuation Dashboard**: Comprehensive overview displaying real-time total valuation, low-stock warnings, and negative stock alerts.
+> Spesifikasi lengkap ada di [CONTEXT.md](CONTEXT.md); kontrak webhook dengan Lokal POS ada di `WEBHOOK_CONTRACT.md` (v2) milik repo `lokal_pos`.
+
+- 📦 **Bahan baku**: satuan dasar (g/ml/pcs), satuan beli + konversi, stok minimum, riwayat pergerakan per bahan.
+- 🍳 **Resep + kustomisasi**: resep dasar per menu POS, penyesuaian per opsi (`add` / `replace` / `multiply`), simulasi pemakaian dan HPP.
+- 🧾 **Potong stok otomatis**: webhook `order.confirmed` memotong stok, `order.voided` mengembalikannya (`void_return`). `order.created`/`payment.paid` disimpan tanpa efek.
+- 🛡️ **Webhook aman**: signature HMAC-SHA256 (`X-Webhook-Signature`) diverifikasi dengan secret per outlet; outlet ditentukan dari signature, bukan dari isi payload.
+- 🧩 **Idempoten**: `webhook_inbox` (kunci unik per outlet) + unique constraint di ledger; aman untuk retry, event ganda, dan event tidak berurutan.
+- 📒 **Ledger append-only** (`stock_movements`): cache `current_stock` diperbarui dalam transaksi yang sama, bisa dihitung ulang dengan `php artisan inventory:rebuild-stock`.
+- 💰 **Biaya**: `avg_cost` rata-rata tertimbang saat stok masuk, HPP & margin per menu, nilai stok.
+- 🔁 **Ketersediaan menu**: menu ditandai habis saat bahan tidak cukup (hanya dikirim saat status berubah, tanda habis manual di POS tidak ditimpa).
+- 📋 **Stok masuk, waste, opname**, supplier, laporan (CSV & PDF), peran pemilik/kasir, multi-outlet (global scope `BelongsToOutlet`).
+- ⏱️ **Scheduler**: sinkron katalog tiap jam dan rekonsiliasi pesanan tiap 15 menit (`php artisan schedule:work`).
 
 ---
 
@@ -33,13 +36,6 @@
 - **Queue/Asynchronous Handler**: Laravel Queue (Database, Redis, etc.)
 - **Security**: HMAC SHA256 Webhook Verification
 - **Testing**: Pest PHP Framework, Mockery
-
----
-
-## Screenshot / Demo
-
-![Lokal Inventory Dashboard Placeholder](https://via.placeholder.com/1200x630/1e293b/ffffff?text=Lokal+Inventory+Dashboard+Interface)
-*(Replace with real dashboard screenshot showing metrics, stock levels, and webhook sync status)*
 
 ---
 
@@ -137,35 +133,24 @@ A simplified view of the key directories in the project:
 ```text
 lokal-inventory/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Api/                     # API controllers (Webhook & POS integration routes)
-│   │   │   ├── DashboardController.php  # Dashboard statistics & valuation metrics
-│   │   │   ├── RecipeController.php     # Bill of Materials & Modifier setup
-│   │   │   └── ...
-│   │   └── Middleware/
-│   │       └── VerifyWebhookSignature.php # HMAC Signature Verification middleware
-│   ├── Jobs/
-│   │   └── ProcessPosWebhookJob.php     # Background queue job for stock deduction
-│   ├── Models/
-│   │   ├── Item.php                     # Raw ingredients / stock items
-│   │   ├── Recipe.php                   # Mapping of products to ingredient quantities
-│   │   ├── WebhookEvent.php             # Idempotency and webhook logging
-│   │   └── ...
-│   └── Services/
-│       ├── RecipeCalculatorService.php  # Calculates exact deduction quantities
-│       └── StockService.php             # General stock checking & warnings
-├── database/
-│   ├── migrations/                      # DB schemas (Items, Recipes, Webhooks, etc.)
-│   └── seeders/                         # Initial users and categories seeding
-├── resources/
-│   ├── css/app.css                      # Tailwind v4 configuration imports
-│   ├── js/app.js                        # Client-side bootstrap & SweetAlert integration
-│   └── views/                           # Blade templates (daisyUI components)
-├── routes/
-│   ├── web.php                          # Backend management routes
-│   └── api.php                          # Secure Webhook endpoints
-└── vite.config.js                       # Vite asset building setup
+│   ├── Enums/                           # UserRole, BaseUnit, StockMovementType, WasteReason, ...
+│   ├── Http/Controllers/
+│   │   ├── Webhooks/LokalPosWebhookController.php  # verifikasi signature -> inbox -> job
+│   │   └── ...                          # Ingredient, Recipe, StockReceipt, Waste, Opname, Report, Settings
+│   ├── Jobs/                            # ProcessConfirmedOrder, ProcessVoidedOrder, SyncCatalogFromPos,
+│   │                                    # PushAvailabilityToPos, ReconcileOrders
+│   ├── Models/Concerns/BelongsToOutlet.php  # isolasi data per outlet (global scope)
+│   ├── Services/
+│   │   ├── StockService.php             # satu-satunya pintu tulis ledger
+│   │   ├── StockDeductionService.php    # sale / void_return, idempoten
+│   │   ├── RecipeUsageCalculator.php    # resep dasar + penyesuaian opsi
+│   │   ├── StockReceiptService.php, OpnameService.php, CostingService.php
+│   │   ├── MenuAvailabilityService.php, CatalogSyncService.php, ReportService.php
+│   │   └── LokalPosClient.php           # satu-satunya klien REST /api/v1 lokal_pos
+│   └── Support/CurrentOutlet.php        # outlet aktif (user web atau konteks eksplisit job)
+├── database/migrations/                 # skema (outlets, ingredients, stock_movements, ...)
+├── tests/Feature/                       # potong stok, webhook, ledger, opname, isolasi outlet, back office
+└── routes/                              # web.php (UI + POST /webhooks/lokal-pos), api.php (alias webhook lama)
 ```
 
 ---
@@ -175,23 +160,26 @@ lokal-inventory/
 The application relies on the following custom environment variables in addition to standard Laravel settings:
 
 ```ini
-# Webhook signature verification secret (used to validate POS payloads)
-WEBHOOK_SECRET=pos_inventory_secret_key_2026
-
-# The endpoint where POS sends webhooks (for documentation/local reference)
-INVENTORY_WEBHOOK_URL=http://your-domain.test/api/v1/webhooks/pos
-
-# Standard Database configuration
+# Database (MySQL untuk kerja/produksi; SQLite boleh untuk lokal)
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=lokal-inventory
+DB_DATABASE=lokal_inventory
 DB_USERNAME=root
-DB_PASSWORD=password
+DB_PASSWORD=
 
-# Queues (Recommended: 'database' or 'redis' in production to enable async webhook processing)
+# Queue: produksi wajib 'database' atau 'redis' + worker (php artisan queue:work)
 QUEUE_CONNECTION=database
+
+# Opsional
+LOKAL_POS_TIMEOUT=10
+LOKAL_POS_AVAILABILITY_ENDPOINT=   # belum ada di kontrak v2; kosong = perubahan ketersediaan hanya dicatat di log
 ```
+
+Koneksi ke Lokal POS (URL, API key, webhook secret) **tidak** diatur lewat `.env`, melainkan per outlet di halaman **Koneksi POS** (disimpan terenkripsi).
+Isi URL webhook yang tampil di halaman itu pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed` dan `order.voided`.
+
+Akun demo setelah `php artisan migrate --seed`: `admin@lokal.com` (pemilik) dan `kasir@lokal.com` (kasir), kata sandi `password`.
 
 ---
 
