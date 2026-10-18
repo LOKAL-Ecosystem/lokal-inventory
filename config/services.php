@@ -31,12 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'pos_webhook' => [
-        'secret' => env('POS_WEBHOOK_SECRET', env('WEBHOOK_SECRET', 'pos_inventory_secret_key_2026')),
-    ],
-
     'lokal_pos' => [
-        'url' => env('LOKAL_POS_URL', 'http://127.0.0.1:8000'),
+        'timeout' => env('LOKAL_POS_TIMEOUT', 10),
+        // Endpoint ubah ketersediaan menu belum ada di kontrak v2. Isi, mis. /products/{id}/availability, bila sudah ada.
+        'availability_endpoint' => env('LOKAL_POS_AVAILABILITY_ENDPOINT'),
     ],
 
 ];
