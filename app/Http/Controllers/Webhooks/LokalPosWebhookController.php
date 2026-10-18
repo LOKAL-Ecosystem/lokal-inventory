@@ -28,12 +28,12 @@ class LokalPosWebhookController extends Controller
         'order.voided' => ProcessVoidedOrder::class,
     ];
 
-    public function __invoke(Request $request, CurrentOutlet $current): JsonResponse
+    public function __invoke(Request $request, CurrentOutlet $current, ?string $token = null): JsonResponse
     {
         $body = $request->getContent();
         $signature = (string) ($request->header('X-Webhook-Signature') ?? $request->header('X-Signature') ?? '');
 
-        $outlet = $this->resolveOutlet($body, $signature);
+        $outlet = $this->resolveOutlet($body, $signature, $token);
 
         if (! $outlet) {
             Log::warning('Webhook Lokal POS ditolak: signature tidak valid.', ['ip' => $request->ip()]);
@@ -76,12 +76,20 @@ class LokalPosWebhookController extends Controller
         });
     }
 
-    protected function resolveOutlet(string $body, string $signature): ?Outlet
+    protected function resolveOutlet(string $body, string $signature, ?string $token = null): ?Outlet
     {
         if ($signature === '') {
             return null;
         }
 
+        if ($token !== null) {
+            // URL per outlet: satu query, satu HMAC. Token hanya penanda; signature tetap penentu.
+            $outlet = Outlet::query()->where('webhook_token', $token)->whereNotNull('webhook_secret')->first();
+
+            return $outlet && hash_equals(hash_hmac('sha256', $body, $outlet->webhook_secret), $signature) ? $outlet : null;
+        }
+
+        // URL lama tanpa token: cari lewat signature ke semua outlet.
         return Outlet::query()
             ->whereNotNull('webhook_secret')
             ->get()

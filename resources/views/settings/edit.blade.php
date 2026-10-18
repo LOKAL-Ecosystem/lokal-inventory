@@ -42,10 +42,16 @@
     <div class="rounded-xl bg-base-200 p-4 text-xs space-y-1">
         <div class="font-extrabold">URL penerima webhook (isi di Lokal POS)</div>
         <code class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md break-all">{{ $webhookUrl }}</code>
+        <p class="text-base-content/60">URL ini khusus outlet Anda (token acak di ujung). Signature tetap diverifikasi dengan webhook secret.</p>
         <p class="text-base-content/60">Langganan event: <strong>order.confirmed</strong>, <strong>order.voided</strong>, dan <strong>catalog.updated</strong> (katalog dan ketersediaan menu).</p>
     </div>
 
     <div class="flex justify-end"><button class="btn btn-primary min-h-11 px-8">Simpan</button></div>
+</form>
+
+<form method="POST" action="{{ route('settings.webhook-url') }}" data-confirm="URL webhook lama akan berhenti berlaku sampai Anda menggantinya di Lokal POS. Lanjutkan?" class="flex justify-end">
+    @csrf
+    <button type="submit" class="btn btn-outline btn-sm min-h-11 rounded-lg gap-2"><i data-lucide="refresh-cw" class="w-4 h-4" aria-hidden="true"></i> Buat ulang URL webhook</button>
 </form>
 
 <section class="bg-base-100 border border-base-300 rounded-2xl p-5 space-y-3">

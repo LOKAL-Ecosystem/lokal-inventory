@@ -104,7 +104,7 @@ Laravel 10 sudah tidak menerima perbaikan keamanan sejak 4 Februari 2025, dan PH
 
 | Bagian            | Implementasi                                                                                                                                   |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Penerima webhook  | Rute `POST /webhooks/lokal-pos` (tanpa CSRF): verifikasi signature → simpan ke `webhook_inbox` → balas 2xx cepat → proses di job               |
+| Penerima webhook  | Rute `POST /webhooks/lokal-pos/{token}` (token unik per outlet di `outlets.webhook_token`, bisa dibuat ulang di Pengaturan; URL lama tanpa token tetap didukung dengan mencari lewat signature; tanpa CSRF): verifikasi signature → simpan ke `webhook_inbox` → balas 2xx cepat → proses di job               |
 | Pemroses pesanan  | Job `ProcessConfirmedOrder` / `ProcessVoidedOrder` yang memanggil Service `StockDeductionService`                                              |
 | Sinkron katalog   | Job `SyncCatalogFromPos` (dipicu webhook `catalog.updated` dan scheduler) → tabel cache `pos_products`, `pos_modifier_groups`, `pos_modifiers` |
 | Ketersediaan menu | Service `MenuAvailabilityService` menghitung porsi tersedia, lalu job `PushAvailabilityToPos`                                                  |
@@ -354,6 +354,6 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
 - **Pemeriksaan paket langganan** (Pro) dilakukan di mana.
 - Hosting produksi: **belum diputuskan**. Driver queue: ~~database atau redis~~ **diputuskan: database** (worker via Supervisor + cron `schedule:run`, lihat README).
-- Kapan upgrade ke versi Laravel dan PHP yang masih didukung.
+- ~~Kapan upgrade ke versi Laravel dan PHP~~ **Diputuskan: tetap di Laravel 10** (PHP ^8.1) untuk saat ini; risiko tanpa perbaikan keamanan diterima, tinjau ulang sebelum rilis ke pelanggan.
 
 Bila menemui keputusan yang menyentuh pertanyaan di atas, jangan mengasumsikan jawabannya; buat implementasi yang mudah diubah atau tanyakan dulu.

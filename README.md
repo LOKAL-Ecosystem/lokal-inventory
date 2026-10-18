@@ -211,7 +211,7 @@ LOKAL_POS_TIMEOUT=10
 ```
 
 Koneksi ke Lokal POS (URL, API key, webhook secret) **tidak** diatur lewat `.env`, melainkan per outlet di halaman **Koneksi POS** (disimpan terenkripsi).
-Isi URL webhook yang tampil di halaman itu pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed`, `order.voided`, dan `catalog.updated`; token API butuh scope `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write`.
+Isi URL webhook unik outlet yang tampil di halaman itu (`/webhooks/lokal-pos/{token}`) pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed`, `order.voided`, dan `catalog.updated`; token API butuh scope `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write`.
 
 Akun demo setelah `php artisan migrate --seed`: `admin@lokal.com` (pemilik) dan `kasir@lokal.com` (kasir), kata sandi `password`.
 

@@ -28,7 +28,7 @@ class SettingsController extends Controller
             'outlet' => $outlet,
             'maskedKey' => Outlet::mask($outlet->pos_api_key),
             'maskedSecret' => Outlet::mask($outlet->webhook_secret),
-            'webhookUrl' => route('webhooks.lokal-pos'),
+            'webhookUrl' => $outlet->webhookUrl(),
             'scopes' => LokalPosClient::SCOPES,
             'inbox' => WebhookInbox::latest('received_at')->latest('id')->limit(25)->get(),
         ]);
@@ -56,6 +56,16 @@ class SettingsController extends Controller
         $outlet->update($data);
 
         return back()->with('success', 'Pengaturan disimpan.');
+    }
+
+    /**
+     * Buat ulang token URL webhook (mis. URL bocor). URL lama berhenti berlaku; ganti di POS.
+     */
+    public function regenerateWebhookUrl(Request $request): RedirectResponse
+    {
+        $request->user()->outlet->forceFill(['webhook_token' => \Illuminate\Support\Str::random(40)])->save();
+
+        return back()->with('success', 'URL webhook dibuat ulang. Perbarui URL di Integrasi → Webhook keluar di Lokal POS.');
     }
 
     public function test(Request $request): RedirectResponse

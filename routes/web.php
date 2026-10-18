@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Penerima webhook Lokal POS (tanpa CSRF, diverifikasi lewat signature).
+// URL unik per outlet (disarankan): outlet dicari dari token, bukan dengan mencoba semua secret.
+Route::post('webhooks/lokal-pos/{token}', LokalPosWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.lokal-pos.outlet');
+// URL lama tanpa token tetap berfungsi bagi langganan yang sudah terdaftar di POS.
 Route::post('webhooks/lokal-pos', LokalPosWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.lokal-pos');
 
 Route::middleware('guest')->group(function () {
@@ -51,6 +54,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/webhook-url', [SettingsController::class, 'regenerateWebhookUrl'])->name('settings.webhook-url');
         Route::post('settings/test', [SettingsController::class, 'test'])->name('settings.test');
         Route::post('settings/sync', [SettingsController::class, 'sync'])->name('settings.sync');
         Route::post('settings/inbox/{inbox}/retry', [SettingsController::class, 'retry'])->name('settings.inbox.retry');

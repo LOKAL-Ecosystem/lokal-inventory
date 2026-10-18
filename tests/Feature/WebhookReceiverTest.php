@@ -155,3 +155,50 @@ it('menentukan outlet dari signature, bukan dari isi payload', function () {
     F::as($other);
     expect((float) $beans->fresh()->current_stock)->toBe(482.0);
 });
+
+// --- URL unik per outlet --------------------------------------------------------------------------
+
+it('menerima webhook di URL unik outlet dan menentukan outlet dari token', function () {
+    $other = F::outlet('Outlet Lain', 'whsec_outlet_b');
+    $payload = F::webhook('order.confirmed', 'ord-tok-1', [F::line(12, 1)]);
+
+    postWebhook("/webhooks/lokal-pos/{$this->outlet->webhook_token}", $payload)->assertStatus(202);
+
+    expect(WebhookInbox::withoutGlobalScopes()->first()->outlet_id)->toBe($this->outlet->id)
+        ->and((float) $this->coffee->fresh()->current_stock)->toBe(982.0)
+        ->and($this->outlet->webhook_token)->not->toBe($other->webhook_token)
+        ->and(strlen($this->outlet->webhook_token))->toBe(40);
+});
+
+it('menolak token tidak dikenal, atau signature dari secret outlet lain', function () {
+    F::outlet('Outlet Lain', 'whsec_outlet_b');
+    $payload = F::webhook('order.confirmed', 'ord-tok-2', [F::line(12, 1)]);
+
+    postWebhook('/webhooks/lokal-pos/token-ngawur', $payload)->assertStatus(401);
+    // Token outlet A dengan signature secret outlet B tidak lolos.
+    postWebhook("/webhooks/lokal-pos/{$this->outlet->webhook_token}", $payload, 'whsec_outlet_b')->assertStatus(401);
+
+    expect(WebhookInbox::withoutGlobalScopes()->count())->toBe(0)
+        ->and((float) $this->coffee->fresh()->current_stock)->toBe(1000.0);
+});
+
+it('URL lama tanpa token tetap berfungsi', function () {
+    postWebhook('/webhooks/lokal-pos', F::webhook('order.confirmed', 'ord-tok-3', [F::line(12, 1)]))->assertStatus(202);
+
+    expect((float) $this->coffee->fresh()->current_stock)->toBe(982.0);
+});
+
+it('pemilik melihat URL webhook outletnya dan bisa membuat ulang tokennya', function () {
+    $this->withoutVite();
+    $owner = F::user($this->outlet, \App\Enums\UserRole::Owner);
+    $old = $this->outlet->webhook_token;
+
+    $this->actingAs($owner)->get('/settings')->assertSee("/webhooks/lokal-pos/{$old}", false);
+
+    $this->post('/settings/webhook-url')->assertSessionHas('success');
+    $new = $this->outlet->fresh()->webhook_token;
+
+    expect($new)->not->toBe($old);
+    postWebhook("/webhooks/lokal-pos/{$old}", F::webhook('order.confirmed', 'ord-tok-4', [F::line(12, 1)]))->assertStatus(401);
+    postWebhook("/webhooks/lokal-pos/{$new}", F::webhook('order.confirmed', 'ord-tok-5', [F::line(12, 1)]))->assertStatus(202);
+});
