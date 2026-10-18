@@ -14,6 +14,13 @@ class TrustProxies extends Middleware
      */
     protected $proxies;
 
+    public function __construct()
+    {
+        // TRUSTED_PROXIES: "*" (semua, mis. di balik load balancer cloud) atau daftar IP dipisah koma.
+        $proxies = config('app.trusted_proxies');
+        $this->proxies = $proxies === '*' ? '*' : ($proxies ? array_map('trim', explode(',', $proxies)) : null);
+    }
+
     /**
      * The headers that should be used to detect proxies.
      *

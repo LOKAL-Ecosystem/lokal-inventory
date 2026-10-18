@@ -353,7 +353,7 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 - **Autentikasi pengguna**: akun terpisah atau masuk lewat akun `lokal_pos` (SSO).
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
 - **Pemeriksaan paket langganan** (Pro) dilakukan di mana.
-- Hosting produksi dan driver queue (database atau redis).
+- Hosting produksi: **belum diputuskan**. Driver queue: ~~database atau redis~~ **diputuskan: database** (worker via Supervisor + cron `schedule:run`, lihat README).
 - Kapan upgrade ke versi Laravel dan PHP yang masih didukung.
 
 Bila menemui keputusan yang menyentuh pertanyaan di atas, jangan mengasumsikan jawabannya; buat implementasi yang mudah diubah atau tanyakan dulu.

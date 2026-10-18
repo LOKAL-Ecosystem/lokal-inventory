@@ -117,14 +117,47 @@ php artisan queue:listen
 ```
 
 ### Production Mode
-In production, compile the assets and run the queue worker as a daemon:
-```bash
-# Compile and optimize production assets
-npm run build
 
-# Start the queue worker daemon
-php artisan queue:work --daemon
+Keputusan: driver queue **database** (tabel `jobs`, `failed_jobs`), `QUEUE_CONNECTION=database`. Test tetap memakai `sync` (lihat `phpunit.xml`).
+
+```bash
+npm ci && npm run build
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
+
+**Queue worker** (webhook, potong stok, push ketersediaan, push peringatan stok, sinkron katalog, rekonsiliasi) harus selalu hidup. Contoh Supervisor (`/etc/supervisor/conf.d/lokal-inventory-worker.conf`):
+
+```ini
+[program:lokal-inventory-worker]
+command=php /var/www/lokal-inventory/artisan queue:work database --sleep=3 --tries=5 --max-time=3600
+process_name=%(program_name)s_%(process_num)02d
+numprocs=2
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/www/lokal-inventory/storage/logs/worker.log
+stopwaitsecs=3600
+```
+
+Setelah deploy: `php artisan queue:restart`. Job gagal total masuk `failed_jobs` (`php artisan queue:failed`, `queue:retry all`); event webhook yang gagal juga terlihat di halaman Koneksi POS dengan tombol "Proses ulang".
+
+**Scheduler** (sinkron katalog tiap jam, rekonsiliasi pesanan + peringatan stok tiap 15 menit, pembersihan token form harian) butuh cron:
+
+```cron
+* * * * * cd /var/www/lokal-inventory && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Checklist keamanan**
+- `APP_ENV=production`, `APP_DEBUG=false`; HTTPS wajib (URL dipaksa `https` di produksi); `TRUSTED_PROXIES` diisi bila di balik proxy/load balancer.
+- `APP_KEY` jangan pernah diganti setelah ada data: `pos_api_key` dan `webhook_secret` outlet terenkripsi dengannya. Simpan cadangannya di tempat aman.
+- Rate limit: login 10/menit, penerima webhook 600/menit per IP.
+- Log tidak memuat rahasia (API key dikirim lewat header, payload webhook tidak di-log); jangan menaikkan `LOG_LEVEL=debug` di produksi.
+- Backup database harian (mis. `mysqldump --single-transaction` lewat cron) dan uji pemulihannya. Ledger `stock_movements` adalah sumber kebenaran stok; `php artisan inventory:rebuild-stock` menghitung ulang cache.
 
 ---
 

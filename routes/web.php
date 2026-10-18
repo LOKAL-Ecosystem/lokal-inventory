@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Penerima webhook Lokal POS (tanpa CSRF, diverifikasi lewat signature).
-Route::post('webhooks/lokal-pos', LokalPosWebhookController::class)->name('webhooks.lokal-pos');
+Route::post('webhooks/lokal-pos', LokalPosWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.lokal-pos');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'create'])->name('login');

@@ -24,6 +24,9 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Penerima webhook: batas longgar per IP (POS mengirim dari satu alamat), hanya menahan banjir.
+        RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(600)->by($request->ip()));
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
