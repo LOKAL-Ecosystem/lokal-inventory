@@ -8,16 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('units', function (Blueprint $table) {
+        Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // e.g., Kilogram, Gram, Liter, Pack, Pcs
-            $table->string('symbol'); // e.g., kg, g, l, pack, pcs
+            $table->foreignId('outlet_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->string('contact')->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('units');
+        Schema::dropIfExists('suppliers');
     }
 };

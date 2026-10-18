@@ -9,13 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('staff')->after('email');
+            $table->foreignId('outlet_id')->nullable()->after('id')->constrained()->cascadeOnDelete();
+            $table->string('role', 20)->default('cashier')->after('password');
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('outlet_id');
             $table->dropColumn('role');
         });
     }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\CurrentOutlet;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Satu konteks outlet per request/job (di-reset otomatis oleh queue worker).
+        $this->app->scoped(CurrentOutlet::class);
     }
 
     /**

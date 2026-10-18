@@ -2,38 +2,50 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\StockMovementType;
+use App\Enums\WasteReason;
+use App\Models\Concerns\BelongsToOutlet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
+/**
+ * Ledger append-only. Koreksi selalu lewat pergerakan baru, dan semua penulisan
+ * harus lewat App\Services\StockService.
+ */
 class StockMovement extends Model
 {
-    use HasFactory;
+    use BelongsToOutlet;
 
-    protected $fillable = [
-        'item_id',
-        'type',
-        'quantity_before',
-        'quantity_change',
-        'quantity_after',
-        'reference_no',
-        'description',
-        'user_id',
-    ];
+    public const UPDATED_AT = null;
+
+    protected $guarded = [];
 
     protected $casts = [
-        'quantity_before' => 'decimal:2',
-        'quantity_change' => 'decimal:2',
-        'quantity_after' => 'decimal:2',
+        'type' => StockMovementType::class,
+        'qty' => 'decimal:3',
+        'unit_cost' => 'decimal:4',
+        'created_at' => 'datetime',
     ];
 
-    public function item(): BelongsTo
+    protected static function booted(): void
     {
-        return $this->belongsTo(Item::class);
+        static::updating(fn () => throw new LogicException('stock_movements bersifat append-only.'));
+        static::deleting(fn () => throw new LogicException('stock_movements bersifat append-only.'));
     }
 
-    public function user(): BelongsTo
+    public function ingredient(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Ingredient::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function reasonLabel(): ?string
+    {
+        return $this->reason ? WasteReason::tryFrom($this->reason)?->label() : null;
     }
 }
