@@ -41,6 +41,7 @@
 <x-modal id="modal-waste" title="Catat Bahan Terbuang">
     <form method="POST" action="{{ route('waste.store') }}" class="space-y-3">
         @csrf
+        <x-idempotency-token />
         <x-field label="Bahan" name="ingredient_id">
             <select name="ingredient_id" id="waste-ingredient" required class="select w-full min-h-11 text-sm rounded-xl">
                 <option value="">Pilih bahan…</option>
@@ -72,7 +73,7 @@
         </x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan</button>
         </div>
     </form>
 </x-modal>

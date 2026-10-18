@@ -48,10 +48,12 @@ class OpnameService
      */
     public function saveCounts(StockOpname $opname, array $counts): void
     {
-        $this->assertDraft($opname);
-
         DB::transaction(function () use ($opname, $counts) {
-            foreach ($opname->items as $item) {
+            // Kunci baris opname: kiriman bersamaan dengan "selesaikan" menunggu, lalu ditolak bila sudah selesai.
+            $locked = StockOpname::lockForUpdate()->findOrFail($opname->id);
+            $this->assertDraft($locked);
+
+            foreach ($locked->items as $item) {
                 if (! array_key_exists($item->id, $counts)) {
                     continue;
                 }
@@ -70,18 +72,17 @@ class OpnameService
     /**
      * Selesaikan opname: tiap selisih ≠ 0 menjadi satu pergerakan adjustment.
      * Selisih dihitung dari snapshot saat dibuat, dan diterapkan ke stok saat ini.
+     * Baris opname dikunci di dalam transaksi, jadi request ganda yang bersamaan hanya berhasil sekali.
      */
     public function complete(StockOpname $opname, ?int $userId = null): StockOpname
     {
-        $this->assertDraft($opname);
-
         $touched = [];
 
         DB::transaction(function () use ($opname, $userId, &$touched) {
-            $opname->refresh();
-            $this->assertDraft($opname);
+            $locked = StockOpname::lockForUpdate()->findOrFail($opname->id);
+            $this->assertDraft($locked);
 
-            foreach ($opname->items()->whereNotNull('counted_qty')->get() as $item) {
+            foreach ($locked->items()->whereNotNull('counted_qty')->get() as $item) {
                 $difference = round((float) $item->counted_qty - (float) $item->system_qty, 3);
 
                 if ($difference == 0.0) {
@@ -94,13 +95,13 @@ class OpnameService
                     $difference,
                     'opname_item',
                     (string) $item->id,
-                    ['created_by' => $userId, 'note' => "Opname #{$opname->id}"],
+                    ['created_by' => $userId, 'note' => "Opname #{$locked->id}"],
                 );
 
                 $touched[] = $item->ingredient_id;
             }
 
-            $opname->update([
+            $locked->update([
                 'status' => OpnameStatus::Completed,
                 'completed_by' => $userId,
                 'completed_at' => now(),
@@ -109,7 +110,7 @@ class OpnameService
 
         $this->availability->refreshForIngredients($touched);
 
-        return $opname;
+        return $opname->refresh();
     }
 
     protected function assertDraft(StockOpname $opname): void

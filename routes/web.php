@@ -44,8 +44,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('recipes', [RecipeController::class, 'index'])->name('recipes.index');
         Route::get('recipes/{posProductId}', [RecipeController::class, 'show'])->whereNumber('posProductId')->name('recipes.show');
-        Route::put('recipes/{posProductId}', [RecipeController::class, 'update'])->whereNumber('posProductId')->name('recipes.update');
-        Route::post('recipes/{posProductId}/adjustments', [RecipeController::class, 'storeAdjustment'])->whereNumber('posProductId')->name('recipes.adjustments.store');
+        Route::put('recipes/{posProductId}', [RecipeController::class, 'update'])->whereNumber('posProductId')->middleware('idempotent')->name('recipes.update');
+        Route::post('recipes/{posProductId}/adjustments', [RecipeController::class, 'storeAdjustment'])->whereNumber('posProductId')->middleware('idempotent')->name('recipes.adjustments.store');
         Route::delete('recipes/adjustments/{adjustment}', [RecipeController::class, 'destroyAdjustment'])->name('recipes.adjustments.destroy');
         Route::get('recipes/{posProductId}/preview', [RecipeController::class, 'preview'])->whereNumber('posProductId')->name('recipes.preview');
 
@@ -59,17 +59,17 @@ Route::middleware('auth')->group(function () {
     // Stok masuk, waste, opname: pemilik & kasir.
     Route::get('stock-receipts', [StockReceiptController::class, 'index'])->name('stock-receipts.index');
     Route::get('stock-receipts/create', [StockReceiptController::class, 'create'])->name('stock-receipts.create');
-    Route::post('stock-receipts', [StockReceiptController::class, 'store'])->name('stock-receipts.store');
+    Route::post('stock-receipts', [StockReceiptController::class, 'store'])->middleware('idempotent')->name('stock-receipts.store');
     Route::get('stock-receipts/{receipt}', [StockReceiptController::class, 'show'])->name('stock-receipts.show');
 
     Route::get('waste', [WasteController::class, 'index'])->name('waste.index');
-    Route::post('waste', [WasteController::class, 'store'])->name('waste.store');
+    Route::post('waste', [WasteController::class, 'store'])->middleware('idempotent')->name('waste.store');
 
     Route::get('opnames', [OpnameController::class, 'index'])->name('opnames.index');
-    Route::post('opnames', [OpnameController::class, 'store'])->name('opnames.store');
+    Route::post('opnames', [OpnameController::class, 'store'])->middleware('idempotent')->name('opnames.store');
     Route::get('opnames/{opname}', [OpnameController::class, 'show'])->name('opnames.show');
-    Route::put('opnames/{opname}', [OpnameController::class, 'update'])->name('opnames.update');
-    Route::post('opnames/{opname}/complete', [OpnameController::class, 'complete'])->middleware('can:complete-opname')->name('opnames.complete');
+    Route::put('opnames/{opname}', [OpnameController::class, 'update'])->middleware('idempotent')->name('opnames.update');
+    Route::post('opnames/{opname}/complete', [OpnameController::class, 'complete'])->middleware(['can:complete-opname', 'idempotent'])->name('opnames.complete');
 
     Route::middleware('can:view-costs')->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

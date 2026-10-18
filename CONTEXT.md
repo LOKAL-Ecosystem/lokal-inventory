@@ -25,6 +25,8 @@ Tujuan produk:
 - Menu otomatis ditandai habis di POS dan Lokal Menu saat bahan tidak cukup.
 - Selisih stok fisik vs sistem terlihat jelas setiap opname.
 
+**Prinsip selalu online**: seluruh ekosistem Lokal (POS, Lokal Menu, Lokal Stock) selalu online. Tidak ada mode offline, service worker, IndexedDB, atau penyimpanan transaksi di perangkat; detail perilaku saat jaringan lambat/putus ada di §9.
+
 Posisi di paket langganan: Lokal Stock masuk paket **Pro** (Dasar = POS + Menu). Di roadmap, Lokal Stock adalah **fase 3**.
 
 ---
@@ -299,7 +301,10 @@ UI: target tombol minimal 44 px (dipakai di tablet juga). Pencarian bahan cepat.
 - **Rekonsiliasi**: job terjadwal mengambil daftar pesanan `confirmed`/`voided` dari `lokal_pos` untuk periode terakhir dan memproses yang terlewat (aman karena idempoten).
 - **Presisi**: hitung dalam satuan dasar dengan DECIMAL; bulatkan hanya di tampilan.
 - **Rahasia**: API key dan webhook secret dienkripsi di database, tidak pernah ditampilkan utuh di UI atau log.
-- **Ketahanan**: bila `lokal_pos` tidak bisa dihubungi, lokal-inventory tetap bisa dipakai (stok masuk, waste, opname); sinkronisasi menyusul.
+- **Selalu online**: seluruh ekosistem Lokal (POS, Lokal Menu, Lokal Stock) selalu online. Tidak ada mode offline, service worker, IndexedDB, atau penyimpanan transaksi di perangkat pengguna. Yang dijaga adalah perilaku saat jaringan pengguna lambat atau putus (lihat "Kiriman ganda" dan "Koneksi putus di browser").
+- **Kiriman ganda**: semua aksi yang mengubah stok (stok masuk, waste, simpan/selesaikan opname, simpan resep dan penyesuaian) membawa token idempotensi sekali pakai (`_idempotency_token`, UUID di hidden input, middleware `idempotent`). Token disimpan per outlet di `form_tokens` dengan unique constraint (`outlet_id`, `token`) dan dibersihkan scheduler setelah 2 hari. Kiriman kedua dengan token yang sama tidak membuat pergerakan baru; pengguna diarahkan ke hasil pertama. Token dilepas bila kiriman gagal (validasi/galat) supaya bisa dicoba lagi. Tombol kirim dinonaktifkan ("Menyimpan...") setelah ditekan. "Selesaikan opname" mengunci baris opname di dalam transaksi, sehingga request ganda yang bersamaan hanya membuat adjustment sekali.
+- **Koneksi putus di browser**: layout menampilkan badge "Tidak ada koneksi" (event online/offline) dan tombol simpan tidak bisa dipakai selama offline. Form bertoken dikirim lewat `fetch`; bila gagal karena jaringan, halaman dan isian tetap utuh dan muncul pesan coba lagi (token yang sama membuat percobaan ulang aman).
+- **Ketahanan** (sisi server): bila server `lokal_pos` tidak bisa dihubungi, lokal-inventory tetap bisa dipakai (stok masuk, waste, opname); sinkron katalog, push ketersediaan, dan rekonsiliasi pesanan menyusul lewat job. Ini **bukan** mode offline di perangkat pengguna.
 
 ---
 

@@ -11,6 +11,7 @@
 
 <form method="POST" action="{{ route('stock-receipts.store') }}" class="space-y-6" id="receipt-form">
     @csrf
+    <x-idempotency-token />
 
     <section class="bg-base-100 border border-base-300 rounded-2xl p-5 grid sm:grid-cols-3 gap-4">
         <x-field label="Tanggal" name="received_at">
@@ -45,7 +46,7 @@
     </section>
 
     <div class="flex justify-end">
-        <button type="submit" class="btn btn-primary min-h-11 px-8">Simpan Stok Masuk</button>
+        <button type="submit" class="btn btn-primary min-h-11 px-8" data-requires-online>Simpan Stok Masuk</button>
     </div>
 </form>
 @endsection

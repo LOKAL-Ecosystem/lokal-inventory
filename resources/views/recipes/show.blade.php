@@ -31,6 +31,7 @@
 {{-- Resep dasar --}}
 <form method="POST" action="{{ route('recipes.update', $product->pos_product_id) }}" class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
     @csrf @method('PUT')
+    <x-idempotency-token />
     <h2 class="px-5 py-4 font-extrabold text-sm border-b border-base-200">Resep dasar (1 porsi)</h2>
     <div class="overflow-x-auto">
         <table class="table">
@@ -40,7 +41,7 @@
     </div>
     <div class="p-4 border-t border-base-200 flex justify-between items-center">
         <button type="button" id="add-item" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah bahan</button>
-        <button type="submit" class="btn btn-primary min-h-11">Simpan Resep</button>
+        <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan Resep</button>
     </div>
 </form>
 
@@ -96,6 +97,7 @@
 <x-modal id="modal-adjustment" title="Penyesuaian Opsi">
     <form method="POST" action="{{ route('recipes.adjustments.store', $product->pos_product_id) }}" class="space-y-3" id="adjustment-form">
         @csrf
+        <x-idempotency-token />
         <input type="hidden" name="pos_modifier_id" id="adj-modifier" />
         <p class="text-xs font-bold text-base-content/70">Opsi: <span id="adj-modifier-name"></span></p>
 
@@ -131,7 +133,7 @@
 
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan</button>
         </div>
     </form>
 </x-modal>

@@ -39,6 +39,7 @@
 <x-modal id="modal-opname" title="Opname Baru">
     <form method="POST" action="{{ route('opnames.store') }}" class="space-y-3">
         @csrf
+        <x-idempotency-token />
         <p class="text-xs text-base-content/60">Stok sistem semua bahan aktif akan disimpan sebagai snapshot saat opname dibuat.</p>
         <x-field label="Tanggal" name="opname_date">
             <input type="date" name="opname_date" value="{{ now()->toDateString() }}" required class="input w-full min-h-11 text-sm rounded-xl" />
@@ -48,7 +49,7 @@
         </x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11">Mulai</button>
+            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Mulai</button>
         </div>
     </form>
 </x-modal>

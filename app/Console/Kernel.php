@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Jobs\ReconcileOrders;
 use App\Jobs\SyncCatalogFromPos;
+use App\Models\FormToken;
 use App\Models\Outlet;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -25,6 +26,10 @@ class Kernel extends ConsoleKernel
             Outlet::all()->filter->hasPosConnection()
                 ->each(fn (Outlet $outlet) => ReconcileOrders::dispatch($outlet->id));
         })->everyFifteenMinutes()->name('inventory-reconcile-orders')->onOneServer();
+
+        // Token idempotensi form hanya perlu bertahan beberapa hari.
+        $schedule->call(fn () => FormToken::withoutGlobalScopes()->where('created_at', '<', now()->subDays(2))->delete())
+            ->daily()->name('inventory-prune-form-tokens');
     }
 
     /**

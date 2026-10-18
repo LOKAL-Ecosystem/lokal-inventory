@@ -13,6 +13,7 @@
 
 <form method="POST" action="{{ route('opnames.update', $opname) }}" id="count-form">
     @csrf @method('PUT')
+    <x-idempotency-token />
 
     <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
@@ -57,11 +58,12 @@
 
 @unless($completed)
     <div class="flex flex-wrap justify-end gap-3">
-        <button type="submit" form="count-form" class="btn btn-outline min-h-11">Simpan Hitungan</button>
+        <button type="submit" form="count-form" class="btn btn-outline min-h-11" data-requires-online>Simpan Hitungan</button>
         @can('complete-opname')
             <form method="POST" action="{{ route('opnames.complete', $opname) }}" id="complete-form">
                 @csrf
-                <button type="submit" class="btn btn-primary min-h-11">Selesaikan Opname</button>
+                <x-idempotency-token />
+                <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Selesaikan Opname</button>
             </form>
         @endcan
     </div>
