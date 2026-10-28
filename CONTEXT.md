@@ -70,14 +70,14 @@ Keduanya ada di kontrak v2.1: `PATCH /api/v1/products/{id}/availability` (scope 
 
 ### Backend
 
-- **PHP ^8.1**: `enum` (backed enum string) dan constructor property promotion.
-- **Laravel 10**.
+- **PHP ^8.4** (pengembangan: 8.5 di Herd): `enum` (backed enum string) dan constructor property promotion.
+- **Laravel 13**, dengan struktur aplikasi Laravel 10 yang **dipertahankan** (`app/Http/Kernel.php`, `app/Console/Kernel.php`, semua provider; bukan `bootstrap/app.php` ramping). **Sanctum 4**.
 - **Autentikasi**: session untuk web. Token ke `lokal_pos` memakai **API Client token** (`X-Api-Key`) per outlet.
 - **HTTP client**: `Http::` (Guzzle) untuk memanggil `/api/v1` `lokal_pos`.
 - **Queue/event**: event, listener, dan job Laravel. Default `sync` di lokal; **produksi wajib `database` atau `redis`** dengan queue worker (pemrosesan webhook dan potong stok berjalan di queue).
 - **Scheduler**: sinkronisasi katalog berkala dan rekonsiliasi pesanan.
 - **PDF**: `barryvdh/laravel-dompdf` untuk ekspor laporan.
-- **Debug**: Tinker, Ignition. **Lokal**: Laravel Sail / Laravel Herd.
+- **Debug**: Tinker 3, Ignition. **Test**: Pest 5 / PHPUnit 13 (metadata test lewat attribute, bukan doc-comment). **Lokal**: Laravel Sail / Laravel Herd.
 
 ### Database
 
@@ -88,15 +88,15 @@ Keduanya ada di kontrak v2.1: `PATCH /api/v1/products/{id}/availability` (scope 
 ### Frontend
 
 - **Blade** server-rendered + komponen Blade.
-- **Vite 8** + `laravel-vite-plugin` 3, **Tailwind CSS 4** (`@tailwindcss/vite`), **DaisyUI 5** dengan tema kustom Lokal.
-- **Lucide** (di-bundle, tanpa CDN), **SweetAlert2** untuk dialog dan notifikasi.
+- **Node 22.12+**. **Vite 8** + `laravel-vite-plugin` 3, **Tailwind CSS 4** (`@tailwindcss/vite`), **DaisyUI 5** dengan tema kustom Lokal.
+- **Lucide 1** (di-bundle, tanpa CDN), **SweetAlert2** untuk dialog dan notifikasi.
 - **Vanilla ES modules.** Jangan menambahkan React, Vue, Alpine, atau framework JS lain.
 - **Grafik**: SVG dan HTML buatan sendiri, tanpa library chart.
 - **Font**: Plus Jakarta Sans. Identitas visual sama dengan POS: logo "L" oranye sebagai favicon, di halaman login, header, dan sidebar (usulan teks di samping logo: **Stock**).
 
 ### Catatan versi
 
-Laravel 10 sudah tidak menerima perbaikan keamanan sejak 4 Februari 2025, dan PHP 8.1 sudah end-of-life sejak 31 Desember 2025. Upgrade direncanakan bersama `lokal_pos` sebelum rilis ke pelanggan. Hindari pola yang mempersulit upgrade.
+Upgrade framework selesai bersama `lokal_pos` (Laravel 10 → 13, PHP 8.4+; versi Composer dan npm sama dengan `lokal_pos`). `VerifyCsrfToken` meng-extend `PreventRequestForgery` (selain token, request `Sec-Fetch-Site: same-origin` juga lolos; pengecualian `webhooks/lokal-pos` dan `webhooks/lokal-pos/*` tetap), `config/cache.php` `serializable_classes => false` (cache hanya menyimpan skalar), nama cookie sesi, prefix cache, dan serialisasi sesi tidak diubah. Hindari pola yang mempersulit upgrade berikutnya.
 
 ---
 
@@ -354,6 +354,6 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
 - **Pemeriksaan paket langganan** (Pro) dilakukan di mana.
 - Hosting produksi: **belum diputuskan**. Driver queue: ~~database atau redis~~ **diputuskan: database** (worker via Supervisor + cron `schedule:run`, lihat README).
-- ~~Kapan upgrade ke versi Laravel dan PHP~~ **Diputuskan: tetap di Laravel 10** (PHP ^8.1) untuk saat ini; risiko tanpa perbaikan keamanan diterima, tinjau ulang sebelum rilis ke pelanggan.
+- ~~Kapan upgrade ke versi Laravel dan PHP~~ **Selesai**: Laravel 13, PHP ^8.4 (bersama `lokal_pos`).
 
 Bila menemui keputusan yang menyentuh pertanyaan di atas, jangan mengasumsikan jawabannya; buat implementasi yang mudah diubah atau tanyakan dulu.

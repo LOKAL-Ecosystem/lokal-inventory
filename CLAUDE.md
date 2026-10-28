@@ -7,7 +7,7 @@ Bila sebuah keputusan menyentuh "Pertanyaan terbuka" (CONTEXT.md §12), jangan m
 ## Ringkasan
 Lokal Stock mencatat bahan baku, memotong stok otomatis sesuai resep saat menu terjual di **lokal-pos** (repo terpisah, database `lokal_pos`), lalu menghitung HPP dan margin. Kedua aplikasi hanya berkomunikasi lewat `WEBHOOK_CONTRACT.md` (v2.1) milik lokal-pos: webhook masuk `order.confirmed` / `order.voided` / `catalog.updated` di `POST /webhooks/lokal-pos/{token}`, dan REST `/api/v1` lokal-pos (header `X-Api-Key`) lewat `LokalPosClient`. Tanpa foreign key, JOIN, atau koneksi database lintas aplikasi.
 
-Stack: PHP ^8.1, Laravel 10, Sanctum 3, DomPDF 3, MySQL (kerja, `lokal_inventory`) / SQLite (test, `.env.example`), Blade + Vite 8 + Tailwind 4 + DaisyUI 5, Lucide, SweetAlert2, vanilla ES modules, Pest 2. Dilarang: React/Vue/Alpine, library chart, library UI/JS baru tanpa diskusi, CDN.
+Stack (sama dengan lokal-pos): PHP ^8.4 (pengembangan: 8.5 di Herd), Laravel 13, Sanctum 4, DomPDF 3, MySQL (kerja, `lokal_inventory`) / SQLite (test, `.env.example`), Blade + Vite 8 + Tailwind 4 + DaisyUI 5, Lucide 1, SweetAlert2, vanilla ES modules, Pest 5 / PHPUnit 13, Node 22.12+. Struktur aplikasi Laravel 10 **dipertahankan** (`app/Http/Kernel.php`, `app/Console/Kernel.php`, semua provider; bukan `bootstrap/app.php` ramping). PHPUnit 13 tidak membaca metadata doc-comment: pakai attribute (`#[DataProvider(...)]`, `#[Test]`, dst.). Dilarang: React/Vue/Alpine, library chart, library UI/JS baru tanpa diskusi, CDN.
 
 ## Perintah
 ```bash

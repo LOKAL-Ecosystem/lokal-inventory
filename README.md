@@ -1,9 +1,9 @@
 # Lokal Inventory
 
-[![Laravel Framework](https://img.shields.io/badge/Laravel-10.x-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![Laravel Framework](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![DaisyUI v5](https://img.shields.io/badge/DaisyUI-v5.0-5A0EF8?logo=daisyui&logoColor=white)](https://daisyui.github.io)
-[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D_8.1-777BB4?logo=php&logoColor=white)](https://www.php.net)
+[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D_8.4-777BB4?logo=php&logoColor=white)](https://www.php.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Lokal Inventory** is a specialized back-office inventory and ingredient management system. It bridges the gap between point-of-sale operations and raw material tracking by offering real-time, automated recipe deductions (Bill of Materials) triggered directly via webhooks from point-of-sale transactions.
@@ -31,22 +31,22 @@
 
 ## Tech Stack
 
-- **Backend**: Laravel v10 (PHP ^8.1)
+- **Backend**: Laravel v13 (PHP ^8.4; pengembangan 8.5 di Herd), Sanctum 4, DomPDF 3
 - **Frontend & Styling**: Tailwind CSS v4, DaisyUI v5 (Blade Templates)
 - **Database**: MySQL, PostgreSQL, or SQLite (configured via `.env`)
 - **Assets Bundler**: Vite v8 + Laravel Vite Plugin
 - **Queue/Asynchronous Handler**: Laravel Queue (Database, Redis, etc.)
 - **Security**: HMAC SHA256 Webhook Verification
-- **Testing**: Pest PHP Framework, Mockery
+- **Testing**: Pest 5 / PHPUnit 13, Mockery
 
 ---
 
 ## Prerequisites
 
 Ensure you have the following installed on your local environment:
-- **PHP**: `^8.1`
+- **PHP**: `^8.4`
 - **Composer**: `^2.0`
-- **Node.js**: `^18.x` or `^20.x` (with `npm`)
+- **Node.js**: `>=22.12` (with `npm`; required by Vite 8)
 - **Database**: MySQL/MariaDB or SQLite
 - **Web Server**: Local Apache/Nginx or Laravel Artisan/Laravel Sail
 
