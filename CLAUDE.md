@@ -13,7 +13,7 @@ Stack (sama dengan lokal-pos): PHP ^8.4 (pengembangan: 8.5 di Herd), Laravel 13,
 ```bash
 composer install && npm install
 cp .env.example .env && php artisan key:generate
-php artisan migrate --seed       # outlet demo: admin@lokal.com (pemilik) / kasir@lokal.com (kasir), password "password"
+php artisan migrate --seed       # outlet demo (katalog = seeder lokal-pos) + riwayat stok 3 minggu (InventoryDemoSeeder, ±3 menit di MySQL): admin@lokal.com (pemilik) / kasir@lokal.com / kasir2@lokal.com (kasir), password "password"
 composer dev                      # serve + queue:listen + vite  (atau pakai Herd + `npm run dev`)
 php artisan queue:work database   # worker (webhook, potong stok, push ketersediaan & peringatan stok)
 php artisan schedule:work         # scheduler (sinkron katalog, rekonsiliasi, pembersihan token form)
