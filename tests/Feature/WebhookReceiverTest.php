@@ -202,3 +202,13 @@ it('pemilik melihat URL webhook outletnya dan bisa membuat ulang tokennya', func
     postWebhook("/webhooks/lokal-pos/{$old}", F::webhook('order.confirmed', 'ord-tok-4', [F::line(12, 1)]))->assertStatus(401);
     postWebhook("/webhooks/lokal-pos/{$new}", F::webhook('order.confirmed', 'ord-tok-5', [F::line(12, 1)]))->assertStatus(202);
 });
+
+it('webhook dikecualikan dari CSRF, juga saat pengecekan CSRF aktif', function () {
+    // Di environment "testing" middleware CSRF melewati semua request; aktifkan pengecekannya.
+    $this->app['env'] = 'local';
+
+    postWebhook('/webhooks/lokal-pos', F::webhook('order.confirmed', 'ord-csrf-1', [F::line(12, 1)]))->assertStatus(202);
+    postWebhook("/webhooks/lokal-pos/{$this->outlet->webhook_token}", F::webhook('order.confirmed', 'ord-csrf-2', [F::line(12, 1)]))->assertStatus(202);
+
+    expect((float) $this->coffee->fresh()->current_stock)->toBe(964.0);
+});

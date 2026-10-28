@@ -137,3 +137,20 @@ it('token lama dibersihkan oleh scheduler', function () {
 
     expect(FormToken::count())->toBe(1);
 });
+
+it('form stok tetap butuh token CSRF dan tetap idempoten saat pengecekan CSRF aktif', function () {
+    // Di environment "testing" middleware CSRF melewati semua request; aktifkan pengecekannya.
+    $this->app['env'] = 'local';
+    $this->actingAs($this->owner)->withSession(['_token' => 'csrf-test-token']);
+    $payload = ['_idempotency_token' => (string) Str::uuid(), 'ingredient_id' => $this->ingredient->id, 'qty' => 100, 'unit' => 'base', 'reason' => 'spilled'];
+
+    $this->post('/waste', $payload)->assertStatus(419);
+    $this->post('/waste', $payload, ['Sec-Fetch-Site' => 'cross-site'])->assertStatus(419);
+    expect(StockMovement::count())->toBe(1); // hanya stok awal
+
+    $this->post('/waste', $payload + ['_token' => 'csrf-test-token'])->assertSessionHas('success');
+    $this->post('/waste', $payload + ['_token' => 'csrf-test-token'])->assertRedirect();
+
+    expect(StockMovement::where('type', StockMovementType::Waste->value)->count())->toBe(1)
+        ->and($this->ingredient->refresh()->current_stock)->toEqual(900.0);
+});

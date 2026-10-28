@@ -108,4 +108,16 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Objects that may be unserialized from the cache. The app only caches
+    | scalar values (rate-limiter counters), so none.
+    |
+    */
+
+    'serializable_classes' => false,
+
 ];

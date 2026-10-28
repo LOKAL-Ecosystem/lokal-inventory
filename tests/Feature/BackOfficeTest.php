@@ -193,3 +193,24 @@ it('laporan dapat diekspor ke CSV dan PDF', function () {
         $this->get("/reports?type={$type}")->assertOk();
     }
 });
+
+it('nama dengan tanda kutip dan karakter non-ASCII aman di tombol ubah (Js::from)', function () {
+    $name = "Kopi \"Gayo\" d'Arabica <Aceh> & Señor Café 咖啡";
+    $ingredient = F::ingredient($name);
+    \App\Models\Supplier::create(['name' => $name, 'contact' => "Bu Ani's \"Toko\" — 0812"]);
+    $this->actingAs($this->owner);
+
+    // Argumen onclick harus berupa JSON.parse('...') tanpa karakter yang bisa menutup atribut atau string JS.
+    $argument = function (string $html, string $function): array {
+        expect(preg_match('/onclick="' . $function . '\((.*?)\)"/u', $html, $match))->toBe(1);
+        expect($match[1])->toMatch("/^JSON\.parse\('[^'\"<>&]*'\)$/u");
+
+        return json_decode(json_decode('"' . substr($match[1], 12, -2) . '"'), true);
+    };
+
+    $data = $argument($this->get('/ingredients')->assertOk()->getContent(), 'editIngredient');
+    expect($data['id'])->toBe($ingredient->id)->and($data['name'])->toBe($name);
+
+    $data = $argument($this->get('/suppliers')->assertOk()->getContent(), 'editSupplier');
+    expect($data['name'])->toBe($name)->and($data['contact'])->toBe("Bu Ani's \"Toko\" — 0812");
+});
