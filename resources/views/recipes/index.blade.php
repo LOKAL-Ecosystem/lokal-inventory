@@ -7,7 +7,7 @@
     <x-slot:actions>
         <form method="POST" action="{{ route('settings.sync') }}">
             @csrf
-            <button class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkron katalog</button>
+            <button class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkron katalog</button>
         </form>
     </x-slot:actions>
 </x-page-header>
@@ -18,7 +18,7 @@
         <input type="checkbox" name="filter" value="no_recipe" class="checkbox checkbox-sm checkbox-primary" @checked(request('filter') === 'no_recipe') onchange="this.form.submit()" />
         Belum ada resep
     </label>
-    <button class="btn btn-neutral min-h-11">Cari</button>
+    <button class="btn btn-neutral rounded-xl min-h-11 font-bold">Cari</button>
 </form>
 
 <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
@@ -56,11 +56,11 @@
                             <td class="text-right text-base-content/40">-</td><td class="text-right text-base-content/40">-</td><td class="text-right text-base-content/40">-</td>
                         @endif
                         <td class="text-center">
-                            @if(! $s['has_recipe']) <span class="badge badge-warning">Tanpa resep</span>
-                            @elseif($p->auto_unavailable) <span class="badge badge-error">Habis (stok)</span>
-                            @elseif($p->availability_source === 'manual') <span class="badge badge-neutral" title="Ditandai habis oleh pemilik di POS. Tidak diubah otomatis oleh stok.">Habis (manual di POS)</span>
-                            @elseif(! $p->is_available) <span class="badge badge-neutral">Habis di POS</span>
-                            @else <span class="badge badge-success">Tersedia</span> @endif
+                            @if(! $s['has_recipe']) <x-status-pill tone="warning">Tanpa resep</x-status-pill>
+                            @elseif($p->auto_unavailable) <x-status-pill tone="error">Habis (stok)</x-status-pill>
+                            @elseif($p->availability_source === 'manual') <x-status-pill title="Ditandai habis oleh pemilik di POS. Tidak diubah otomatis oleh stok.">Habis (manual di POS)</x-status-pill>
+                            @elseif(! $p->is_available) <x-status-pill>Habis di POS</x-status-pill>
+                            @else <x-status-pill tone="success">Tersedia</x-status-pill> @endif
                         </td>
                         <td class="text-right"><a href="{{ route('recipes.show', $p->pos_product_id) }}" class="btn btn-ghost btn-sm min-h-11">Atur</a></td>
                     </tr>

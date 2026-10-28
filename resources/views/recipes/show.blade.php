@@ -40,8 +40,8 @@
         </table>
     </div>
     <div class="p-4 border-t border-base-200 flex justify-between items-center">
-        <button type="button" id="add-item" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah bahan</button>
-        <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan Resep</button>
+        <button type="button" id="add-item" class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah bahan</button>
+        <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold" data-requires-online>Simpan Resep</button>
     </div>
 </form>
 
@@ -62,7 +62,7 @@
                         </label>
 
                         @foreach($adjustments[$modifier->pos_modifier_id] ?? [] as $adjustment)
-                            <span class="badge badge-neutral gap-1 py-3">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg border bg-base-200 border-base-300">
                                 @switch($adjustment->action->value)
                                     @case('add') + {{ $adjustment->ingredient->formatQty($adjustment->qty) }} {{ $adjustment->ingredient->name }} @break
                                     @case('replace') {{ $adjustment->replacesIngredient->name }} → {{ $adjustment->ingredient->name }}@if($adjustment->qty) ({{ $adjustment->ingredient->formatQty($adjustment->qty) }})@endif @break
@@ -133,7 +133,7 @@
 
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan</button>
+            <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold" data-requires-online>Simpan</button>
         </div>
     </form>
 </x-modal>

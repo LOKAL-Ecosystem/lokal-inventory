@@ -40,13 +40,13 @@
             </table>
         </div>
         <div class="p-4 border-t border-base-200 flex justify-between items-center">
-            <button type="button" id="add-row" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah baris</button>
+            <button type="button" id="add-row" class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Tambah baris</button>
             <div class="text-sm font-extrabold">Total: Rp <span id="grand-total">0</span></div>
         </div>
     </section>
 
     <div class="flex justify-end">
-        <button type="submit" class="btn btn-primary min-h-11 px-8" data-requires-online>Simpan Stok Masuk</button>
+        <button type="submit" class="btn btn-primary rounded-xl min-h-11 px-8 font-bold" data-requires-online>Simpan Stok Masuk</button>
     </div>
 </form>
 @endsection

@@ -18,15 +18,15 @@ Kata **WAJIB** / **JANGAN** berarti aturan keras; sisanya adalah default yang bo
 
 ## 2. Teknologi (tetap)
 
-| Kebutuhan      | Pakai                                                             | Dilarang                                |
-| -------------- | ----------------------------------------------------------------- | --------------------------------------- |
-| CSS            | Tailwind 4 + DaisyUI 5, tema `lokal`                              | CSS framework lain, hex mentah di Blade |
-| Build          | Vite 8, `@tailwindcss/vite`, `laravel-vite-plugin`                |                                         |
-| Ikon           | Lucide, **didaftarkan manual** di `resources/js/app.js`           | icon font, SVG ikon sembarang, CDN      |
-| Dialog & toast | SweetAlert2 (`window.Swal`), `<dialog>` DaisyUI                   | `alert()`, `confirm()` bawaan browser   |
-| JS             | Vanilla ES modules, `fetch`                                       | React/Vue/Alpine, WebSocket             |
-| Grafik         | SVG/HTML buatan sendiri                                           | library chart                           |
-| Font           | Plus Jakarta Sans 300-800 (Google Fonts, `<link>` + `preconnect`) | font lain                               |
+| Kebutuhan | Pakai | Dilarang |
+|---|---|---|
+| CSS | Tailwind 4 + DaisyUI 5, tema `lokal` | CSS framework lain, hex mentah di Blade |
+| Build | Vite 8, `@tailwindcss/vite`, `laravel-vite-plugin` | |
+| Ikon | Lucide, **didaftarkan manual** di `resources/js/app.js` | icon font, SVG ikon sembarang, CDN |
+| Dialog & toast | SweetAlert2 (`window.Swal`), `<dialog>` DaisyUI | `alert()`, `confirm()` bawaan browser |
+| JS | Vanilla ES modules, `fetch` | React/Vue/Alpine, WebSocket |
+| Grafik | SVG/HTML buatan sendiri | library chart |
+| Font | Plus Jakarta Sans 300-800 (Google Fonts, `<link>` + `preconnect`) | font lain |
 
 Setiap dokumen HTML: `<html lang="id" data-theme="lokal">`.
 
@@ -36,20 +36,19 @@ Setiap dokumen HTML: `<html lang="id" data-theme="lokal">`.
 
 ### 3.1 Warna (tema DaisyUI `lokal`)
 
-| Token                      | Hex       | Pakai untuk                                                    |
-| -------------------------- | --------- | -------------------------------------------------------------- |
-| `primary`                  | `#4285F4` | Aksi utama, link, fokus, item menu aktif, toggle aktif         |
-| `primary-content`          | `#FFFFFF` | Teks di atas primary                                           |
-| `success`                  | `#0F9D58` | Berhasil, lunas, stok aman                                     |
-| `warning`                  | `#F4B400` | Menunggu, peringatan, stok menipis (teks di atasnya `#202124`) |
-| `error`                    | `#DB4437` | Gagal, hapus, habis, tidak ada koneksi                         |
-| `neutral` / `base-content` | `#202124` | Teks utama                                                     |
-| `base-100`                 | `#FFFFFF` | Kartu, navbar, sidebar, modal, input                           |
-| `base-200`                 | `#F8F9FA` | Latar halaman                                                  |
-| `base-300`                 | `#E8EAED` | Border, pemisah                                                |
+| Token | Hex | Pakai untuk |
+|---|---|---|
+| `primary` | `#4285F4` | Aksi utama, link, fokus, item menu aktif, toggle aktif |
+| `primary-content` | `#FFFFFF` | Teks di atas primary |
+| `success` | `#0F9D58` | Berhasil, lunas, stok aman |
+| `warning` | `#F4B400` | Menunggu, peringatan, stok menipis (teks di atasnya `#202124`) |
+| `error` | `#DB4437` | Gagal, hapus, habis, tidak ada koneksi |
+| `neutral` / `base-content` | `#202124` | Teks utama |
+| `base-100` | `#FFFFFF` | Kartu, navbar, sidebar, modal, input |
+| `base-200` | `#F8F9FA` | Latar halaman |
+| `base-300` | `#E8EAED` | Border, pemisah |
 
 Aturan:
-
 - **WAJIB** pakai kelas token (`bg-primary`, `text-error`, `border-base-300`), bukan hex di Blade/JS. Hex hanya di definisi tema dan `--viz-*`.
 - Teks sekunder `text-base-content/60`; hint `/50`; ikon/placeholder pasif `/40`.
 - Tint status: latar `bg-{warna}/10` atau `/5`, border `border-{warna}/20-30`, teks warna penuh. Contoh `bg-success/5 border-success/20 text-success`.
@@ -61,46 +60,40 @@ Definisi tema (salin apa adanya ke aplikasi lain):
 ```css
 @import "tailwindcss";
 
-@theme {
-    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-}
-@plugin "daisyui" {
-    themes: lokal;
-}
+@theme { --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif; }
+@plugin "daisyui" { themes: lokal; }
 @plugin "daisyui/theme" {
-    name: "lokal";
-    default: true;
-    --color-primary: #4285f4;
-    --color-primary-content: #ffffff;
-    --color-success: #0f9d58;
-    --color-success-content: #ffffff;
-    --color-warning: #f4b400;
-    --color-warning-content: #202124;
-    --color-error: #db4437;
-    --color-error-content: #ffffff;
-    --color-neutral: #202124;
-    --color-neutral-content: #ffffff;
-    --color-base-100: #ffffff;
-    --color-base-200: #f8f9fa;
-    --color-base-300: #e8eaed;
-    --color-base-content: #202124;
+  name: "lokal";
+  default: true;
+  --color-primary: #4285F4;  --color-primary-content: #ffffff;
+  --color-success: #0F9D58;  --color-success-content: #ffffff;
+  --color-warning: #F4B400;  --color-warning-content: #202124;
+  --color-error:   #DB4437;  --color-error-content:   #ffffff;
+  --color-neutral: #202124;  --color-neutral-content: #ffffff;
+  --color-base-100: #ffffff; --color-base-200: #f8f9fa;
+  --color-base-300: #e8eaed; --color-base-content: #202124;
+
+  /* Bentuk & kedalaman: WAJIB ada, lihat 3.3 */
+  --radius-selector: 0.375rem; --radius-field: 0.5rem; --radius-box: 1rem;
+  --size-selector: 0.25rem;    --size-field: 0.25rem;
+  --border: 1px;               --depth: 0;             --noise: 0;
 }
 ```
 
 ### 3.2 Tipografi
 
-| Peran                                   | Kelas                                                                       |
-| --------------------------------------- | --------------------------------------------------------------------------- |
-| Judul halaman                           | `text-3xl font-extrabold tracking-tight` (`<x-page-header>`)                |
-| Judul kartu/modal                       | `font-extrabold text-lg`                                                    |
-| Angka KPI                               | `text-2xl font-black` (+ `tabular-nums`)                                    |
-| Angka besar (total bayar, kode pesanan) | `text-3xl`-`text-6xl font-black`                                            |
-| Isi                                     | `text-sm` (14 px)                                                           |
-| Label form                              | `text-xs font-bold text-base-content/70`                                    |
-| Hint                                    | `text-[11px] text-base-content/50`                                          |
-| Error field                             | `text-[11px] text-error font-semibold`                                      |
-| Label kapital (judul seksi, peran)      | `text-[10px] uppercase tracking-widest font-extrabold text-base-content/60` |
-| Header tabel                            | `text-[10px] uppercase tracking-wider font-extrabold text-base-content/50`  |
+| Peran | Kelas |
+|---|---|
+| Judul halaman | `text-3xl font-extrabold tracking-tight` (`<x-page-header>`) |
+| Judul kartu/modal | `font-extrabold text-lg` |
+| Angka KPI | `text-2xl font-black` (+ `tabular-nums`) |
+| Angka besar (total bayar, kode pesanan) | `text-3xl`-`text-6xl font-black` |
+| Isi | `text-sm` (14 px) |
+| Label form | `text-xs font-bold text-base-content/70` |
+| Hint | `text-[11px] text-base-content/50` |
+| Error field | `text-[11px] text-error font-semibold` |
+| Label kapital (judul seksi, peran) | `text-[10px] uppercase tracking-widest font-extrabold text-base-content/60` |
+| Header tabel | `text-[10px] uppercase tracking-wider font-extrabold text-base-content/50` |
 
 - Semua angka uang dan jumlah di kolom/tabel: `tabular-nums`, rata kanan. Format `Rp 25.000` (titik ribuan) **hanya di tampilan**; data tetap integer.
 - Teks UI **bahasa Indonesia**, kalimat pendek, kata kerja di tombol ("Simpan", "Bayar", "Tutup shift"). Nama kode (class, kolom, enum) bahasa Inggris.
@@ -108,16 +101,28 @@ Definisi tema (salin apa adanya ke aplikasi lain):
 
 ### 3.3 Bentuk, jarak, bayangan
 
-| Elemen                     | Aturan                                                                                                                      |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Kartu, modal, panel        | `rounded-2xl`, `bg-base-100`, `border border-base-300` (atau `border-base-200/10`), **tanpa bayangan**                      |
-| Input, tombol besar        | `rounded-xl` (tinggi `h-11`/`h-12`)                                                                                         |
-| Tombol toolbar, chip kecil | `rounded-lg`, `btn-sm`                                                                                                      |
-| Badge, avatar, pil status  | `rounded-full` atau `rounded-md` (pil status kecil)                                                                         |
-| Bayangan                   | hanya elemen melayang: dropdown/modal `shadow-lg`, tombol aksi utama `shadow-lg shadow-primary/25`, kartu login `shadow-xl` |
-| Padding halaman            | `p-4 md:p-6`; jarak antarblok `space-y-6` (halaman) / `space-y-4` (di dalam kartu)                                          |
-| Padding kartu              | `p-5`-`p-6`                                                                                                                 |
-| Lebar konten               | back office penuh; halaman form/detail `max-w-3xl`; Lokal Menu `max-w-xl` di tengah                                         |
+Radius bawaan komponen DaisyUI datang dari **token tema**, bukan dari kelas per elemen. Tanpa token ini DaisyUI memakai radius 0, sehingga setiap `btn`, `badge`, `checkbox`, atau `card` yang lupa diberi `rounded-*` tampil lancip. Token **WAJIB** ada dan sama di semua aplikasi:
+
+| Token | Nilai | Setara | Berlaku untuk |
+|---|---|---|---|
+| `--radius-field` | `0.5rem` | `rounded-lg` | `btn`, `input`, `select`, `textarea`, `tab`, `join` |
+| `--radius-box` | `1rem` | `rounded-2xl` | `card`, `modal-box`, `alert`, `dropdown-content` |
+| `--radius-selector` | `0.375rem` | `rounded-md` | `checkbox`, `badge`, pil kecil |
+| `--border` | `1px` | | semua border komponen |
+| `--depth` / `--noise` | `0` | | datar: tanpa bayangan/gradasi bawaan |
+
+Artinya tombol biasa cukup `btn btn-primary` (sudah `rounded-lg`). Kelas `rounded-*` hanya ditulis bila **sengaja berbeda** dari token: `rounded-xl` untuk input dan tombol besar `h-12`, `rounded-2xl` untuk CTA Lokal Menu `h-14`, `rounded-full` untuk avatar/titik. **JANGAN** memakai `rounded-none` pada tombol, input, atau kartu.
+
+| Elemen | Aturan |
+|---|---|
+| Kartu, modal, panel | `rounded-2xl`, `bg-base-100`, `border border-base-300` (atau `border-base-200/10`), **tanpa bayangan** |
+| Input, tombol besar | `rounded-xl` (tinggi `h-11`/`h-12`) |
+| Tombol toolbar, chip kecil | `rounded-lg`, `btn-sm` |
+| Badge, avatar, pil status | `rounded-full` atau `rounded-md` (pil status kecil) |
+| Bayangan | hanya elemen melayang: dropdown/modal `shadow-lg`, tombol aksi utama `shadow-lg shadow-primary/25`, kartu login `shadow-xl` |
+| Padding halaman | `p-4 md:p-6`; jarak antarblok `space-y-6` (halaman) / `space-y-4` (di dalam kartu) |
+| Padding kartu | `p-5`-`p-6` |
+| Lebar konten | back office penuh; halaman form/detail `max-w-3xl`; Lokal Menu `max-w-xl` di tengah |
 
 Border selalu **1 px** (`.btn`, `.input`, `.select` sudah dipaksa di `app.css`).
 
@@ -141,7 +146,6 @@ drawer lg:drawer-open
 └─ drawer-side            w-64 (terbuka) / w-14 (mode ikon), bg-base-100 border-r border-base-300
      header logo + nama modul (tinggi 65 px) → ul.menu (grup .menu-title + <x-nav-link>) → footer pengguna
 ```
-
 \* hanya layar POS dan Pesanan.
 
 - Item menu aktif: `bg-primary text-primary-content rounded-xl`; tidak aktif `hover:bg-base-200`. Mode ikon memakai tooltip.
@@ -163,27 +167,27 @@ Dua panel `lg:grid-cols-2`: panel brand gradasi biru + logo + tiga butir nilai (
 
 ### 5.1 Komponen Blade (pakai ulang, jangan tulis ulang)
 
-| Komponen                                          | Isi                                                                                 |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `<x-page-header title subtitle>` + slot `actions` | Judul halaman, subjudul `text-sm text-base-content/60`, tombol aksi di kanan        |
-| `<x-field label name hint>`                       | Label, kontrol, hint, pesan error validasi                                          |
-| `<x-modal id title size>`                         | `<dialog>` DaisyUI, `rounded-2xl`, judul `font-extrabold text-lg`, backdrop menutup |
-| `<x-nav-link route icon label match>`             | Item sidebar dengan state aktif dan `aria-current`                                  |
+| Komponen | Isi |
+|---|---|
+| `<x-page-header title subtitle>` + slot `actions` | Judul halaman, subjudul `text-sm text-base-content/60`, tombol aksi di kanan |
+| `<x-field label name hint>` | Label, kontrol, hint, pesan error validasi |
+| `<x-modal id title size>` | `<dialog>` DaisyUI, `rounded-2xl`, judul `font-extrabold text-lg`, backdrop menutup |
+| `<x-nav-link route icon label match>` | Item sidebar dengan state aktif dan `aria-current` |
 
 Aplikasi lain **WAJIB** menyalin keempat komponen ini byte-per-byte (lihat bagian 10) supaya perubahan satu tempat bisa dibawa ke yang lain.
 
 ### 5.2 Tombol
 
-| Peran                 | Kelas                                                                                         |
-| --------------------- | --------------------------------------------------------------------------------------------- |
-| Aksi utama            | `btn btn-primary rounded-lg font-bold` (besar: `h-12 rounded-xl shadow-lg shadow-primary/25`) |
-| Sekunder              | `btn btn-outline` / `btn btn-ghost`                                                           |
-| Netral gelap (ekspor) | `btn btn-neutral btn-sm rounded-xl gap-2 font-bold normal-case`                               |
-| Berbahaya             | `btn btn-outline btn-error` atau `text-error` + `hover:bg-error/10` (ikon hapus)              |
-| Ikon saja             | `btn btn-ghost btn-square btn-sm` **dengan `aria-label`**                                     |
-| Ukuran                | toolbar `btn-sm`; layar sentuh minimal `min-h-11`; aksi utama kasir `h-12`                    |
+| Peran | Kelas |
+|---|---|
+| Aksi utama | `btn btn-primary font-bold` (besar: `h-12 rounded-xl shadow-lg shadow-primary/25`) |
+| Sekunder | `btn btn-outline` / `btn btn-ghost` |
+| Netral gelap (ekspor) | `btn btn-neutral btn-sm rounded-xl gap-2 font-bold normal-case` |
+| Berbahaya | `btn btn-outline btn-error` atau `text-error` + `hover:bg-error/10` (ikon hapus) |
+| Ikon saja | `btn btn-ghost btn-square btn-sm` **dengan `aria-label`** |
+| Ukuran | toolbar `btn-sm`; layar sentuh minimal `min-h-11`; aksi utama kasir `h-12` |
 
-Satu aksi utama per area. Tombol dengan ikon: ikon `w-4 h-4` + `gap-2`, ikon `aria-hidden="true"`. Saat memproses: nonaktifkan dan ubah teks ("Memproses...").
+Radius tombol berasal dari token (`rounded-lg`); jangan menambah `rounded-lg` di setiap tombol dan jangan membuat tombol bersudut lancip. Satu aksi utama per area. Tombol dengan ikon: ikon `w-4 h-4` + `gap-2`, ikon `aria-hidden="true"`. Saat memproses: nonaktifkan dan ubah teks ("Memproses...").
 
 ### 5.3 Form
 
@@ -205,13 +209,13 @@ Satu aksi utama per area. Tombol dengan ikon: ikon `w-4 h-4` + `gap-2`, ikon `ar
 
 Satu makna satu warna, selalu **disertai teks** (jangan hanya warna):
 
-| Makna                                | Pil                                                    |
-| ------------------------------------ | ------------------------------------------------------ |
-| Menunggu / belum dibayar             | `bg-amber-50 text-amber-700 border-amber-200/60`       |
-| Berhasil / diterima / lunas          | `bg-emerald-50 text-emerald-700 border-emerald-200/60` |
-| Dibatalkan / netral                  | `bg-base-200 text-base-content/60 border-base-300`     |
-| Gagal / void / habis                 | `bg-red-50 text-red-700 border-red-200/60`             |
-| Info / sumber ("Menu", label produk) | `bg-primary/10 text-primary border-primary/30`         |
+| Makna | Pil |
+|---|---|
+| Menunggu / belum dibayar | `bg-amber-50 text-amber-700 border-amber-200/60` |
+| Berhasil / diterima / lunas | `bg-emerald-50 text-emerald-700 border-emerald-200/60` |
+| Dibatalkan / netral | `bg-base-200 text-base-content/60 border-base-300` |
+| Gagal / void / habis | `bg-red-50 text-red-700 border-red-200/60` |
+| Info / sumber ("Menu", label produk) | `bg-primary/10 text-primary border-primary/30` |
 
 Bentuk pil: `inline-block px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-md border whitespace-nowrap`. DaisyUI `badge badge-success|warning|error|ghost` boleh dipakai untuk badge angka/hitungan.
 
@@ -226,15 +230,15 @@ Kebijakan angka stok: di atas minimum = success, sampai minimum = warning, nol a
 
 ### 5.7 Pola khusus yang sudah baku
 
-| Pola                | Aturan singkat                                                                                                                                                    |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dialog bayar        | Pilih metode dulu (kisi 2 kolom `h-16`), baru nominal; ringkasan dengan nada `ok/warn/error`; tombol nominal cepat `btn-sm`                                       |
-| Struk               | Kertas `font-mono text-xs`, latar `#FFFDF9`, garis putus-putus; cetak hanya `#receipt-paper`; struk thermal ASCII saja                                            |
-| Bar shift & koneksi | Pil kecil di navbar; "Tidak ada koneksi" = `badge badge-error`; tombol transaksi redup 50 % + pesan saat offline (`data-requires-online`)                         |
-| Kode pesanan        | `font-black`, besar, prefiks `#`, dapat dibaca dari jauh                                                                                                          |
+| Pola | Aturan singkat |
+|---|---|
+| Dialog bayar | Pilih metode dulu (kisi 2 kolom `h-16`), baru nominal; ringkasan dengan nada `ok/warn/error`; tombol nominal cepat `btn-sm` |
+| Struk | Kertas `font-mono text-xs`, latar `#FFFDF9`, garis putus-putus; cetak hanya `#receipt-paper`; struk thermal ASCII saja |
+| Bar shift & koneksi | Pil kecil di navbar; "Tidak ada koneksi" = `badge badge-error`; tombol transaksi redup 50 % + pesan saat offline (`data-requires-online`) |
+| Kode pesanan | `font-black`, besar, prefiks `#`, dapat dibaca dari jauh |
 | Kartu produk (Menu) | Foto 80 px `rounded-xl` lazy, nama `font-bold`, deskripsi 2 baris, harga `font-extrabold`; **habis** = abu, `opacity-60 grayscale`, tombol nonaktif, teks "Habis" |
-| Pilihan kustomisasi | Grup dalam `fieldset`, aturan ("Wajib pilih 1", "Maks. 3") di kanan judul grup, selisih harga `+Rp x` di kanan opsi                                               |
-| Kuantitas           | `−` / angka / `+` dengan tombol `min-h-11 min-w-11`, `aria-label`                                                                                                 |
+| Pilihan kustomisasi | Grup dalam `fieldset`, aturan ("Wajib pilih 1", "Maks. 3") di kanan judul grup, selisih harga `+Rp x` di kanan opsi |
+| Kuantitas | `−` / angka / `+` dengan tombol `min-h-11 min-w-11`, `aria-label` |
 
 ### 5.8 Grafik (dashboard)
 
@@ -268,7 +272,8 @@ SVG/HTML manual, gaya di `app.css` (`.viz-*`, variabel `--viz-*`). Satu hue per 
 ## 8. Yang JANGAN dilakukan
 
 - Hex warna mentah di Blade/JS, atau warna aksen kedua.
-- Bayangan di kartu biasa, sudut lancip, border tebal.
+- Bayangan di kartu biasa, sudut lancip (`rounded-none`), border tebal.
+- Menghapus atau mengubah token bentuk tema (`--radius-*`, `--border`, `--depth`) di satu aplikasi saja.
 - Tombol/target < 44 px di layar sentuh.
 - `alert()`/`confirm()`/`prompt()` bawaan browser.
 - Spinner layar penuh, animasi dekoratif, skeleton berlebihan.
@@ -297,11 +302,32 @@ SVG/HTML manual, gaya di `app.css` (`.viz-*`, variabel `--viz-*`). Satu hue per 
 Aplikasi terpisah **WAJIB** memakai tampilan yang sama. Langkah:
 
 1. Pasang dependensi yang sama (`tailwindcss`, `@tailwindcss/vite`, `daisyui`, `lucide`, `sweetalert2`, `vite`, `laravel-vite-plugin`) dengan versi mayor yang sama dengan `package.json` repo ini.
-2. Salin **utuh** `resources/css/app.css` (tema + override global + `.viz-*`) dan `public/logo.svg`; jangan mengubah token.
+2. Salin **utuh** `resources/css/app.css` (tema warna + token bentuk + override global + `.viz-*`) dan `public/logo.svg`; jangan mengubah token.
 3. Salin komponen Blade bagian 5.1 dan pola layout `layouts/app.blade.php` (ganti teks "POS" di header sidebar dengan nama modul, mis. "STOK", dan isi menunya).
 4. Salin `resources/js/app.js` (daftar ikon, `window.Swal`, `data-confirm`, `data-copy`, sidebar) dan tambahkan hanya ikon yang dipakai.
 5. Muat font Plus Jakarta Sans lewat `<link>` yang sama; set `<html lang="id" data-theme="lokal">`.
 6. Halaman login mengikuti bagian 4.3 dengan teks nilai yang sesuai modul.
-7. Perubahan token atau komponen baku dilakukan **di repo ini dulu**, lalu disalin ke repo lain secepatnya, supaya tidak menyimpang.
+7. Perubahan token atau komponen baku dilakukan **di repo ini dulu**, lalu disalin ke repo lain secepatnya, supaya tidak menyimpang. `design-system.md` disalin **byte-per-byte** ke setiap repo; penyesuaian per aplikasi hanya ditulis di bagian 11, bukan dengan mengubah aturan umum.
 
 Override yang sudah ada di `app.css` (jangan diduplikasi): `.btn` border 1 px; `.input`/`.select` border `#d1d5db` + ring fokus; `.toggle` switch ramping; `.checkbox`/`.radio` border `#9aa0a6`; scrollbar tipis 6 px; `select option` putih; `@media print` struk 80 mm; `.is-offline [data-requires-online]`.
+
+---
+
+## 11. Penyesuaian per aplikasi
+
+Semua aplikasi memakai token, komponen, dan aturan di atas tanpa pengecualian. Yang boleh berbeda hanya isi dan pola kerja khas modulnya:
+
+| Hal | lokal-pos (staf) | Lokal Menu (publik, di repo lokal-pos) | lokal-inventory (staf) |
+|---|---|---|---|
+| Layout | `layouts/app` | `layouts/menu` (bagian 4.2) | `layouts/app` |
+| Nama modul di header sidebar | `POS` | tidak ada sidebar; header outlet | `STOK` |
+| Grup sidebar | Operasional, Katalog, Analitik, Pengaturan | | Stok, Katalog, Analitik & Pengaturan |
+| Warna aksen | primary `#4285F4` | primary boleh ditimpa warna brand outlet (bagian 3.1) | primary `#4285F4`, tidak ditimpa |
+| Perangkat utama | tablet 10 inci landscape | ponsel | laptop dan tablet |
+| Navbar | badge koneksi, bar shift (layar POS & Pesanan), lonceng, pengguna | tidak ada | badge koneksi, lonceng, pengguna |
+| Isi lonceng | Menu habis, Bahan hampir habis (dari Inventory) | | Bahan hampir habis, Webhook gagal diproses |
+| Tombol aksi utama | kasir `h-12 rounded-xl` | CTA bawah `h-14 rounded-2xl` | toolbar & form `btn-primary` biasa |
+| Angka utama | uang (`Rp`), kode pesanan besar | harga, kode pesanan besar | jumlah stok **selalu dengan satuan** (`g`, `ml`, `pcs`), uang hanya untuk pemilik (HPP, nilai stok) |
+| Pola khusus | dialog bayar, struk, shift kasir, printer | kartu produk, kustomisasi, status bayar | ledger pergerakan stok (hanya baca), opname (hitungan fisik vs sistem), resep & penyesuaian opsi, token idempotensi form |
+| Status stok | | menu habis = abu + "Habis" | di atas minimum = success, sampai minimum = warning, nol/negatif = error (bagian 5.5) |
+

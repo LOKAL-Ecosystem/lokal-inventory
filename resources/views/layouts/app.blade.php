@@ -62,7 +62,7 @@
                                                     <span class="block text-sm font-bold">{{ $item->name }}</span>
                                                     <span class="block text-[11px] text-base-content/50">Minimum {{ $item->formatQty($item->min_stock) }}</span>
                                                 </span>
-                                                <span class="badge {{ $item->isNegative() ? 'badge-error' : 'badge-warning' }} font-bold tabular-nums">{{ $item->formatQty($item->current_stock) }}</span>
+                                                <x-status-pill :tone="$item->isNegative() ? 'error' : 'warning'" :upper="false" class="tabular-nums">{{ $item->formatQty($item->current_stock) }}</x-status-pill>
                                             </a>
                                         </li>
                                     @endforeach
@@ -74,7 +74,7 @@
                                     <p class="text-xs font-bold uppercase tracking-wider text-base-content/60 px-2 pb-2 {{ $lowStockCount > 0 ? 'pt-4' : '' }}">Webhook gagal diproses</p>
                                     <a href="{{ route('settings.edit') }}" class="flex justify-between items-center gap-3 px-2 py-2.5 min-h-11 rounded-lg hover:bg-base-200">
                                         <span class="text-sm font-bold">Periksa koneksi POS</span>
-                                        <span class="badge badge-error font-bold tabular-nums">{{ $stuckEvents }}</span>
+                                        <x-status-pill tone="error" class="tabular-nums">{{ $stuckEvents }}</x-status-pill>
                                     </a>
                                 @endif
                             @endcan

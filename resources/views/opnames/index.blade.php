@@ -5,7 +5,7 @@
 @section('content')
 <x-page-header title="Stok Opname" subtitle="Bandingkan stok fisik dengan stok sistem. Selisih dicatat sebagai penyesuaian saat opname diselesaikan.">
     <x-slot:actions>
-        <button type="button" onclick="document.getElementById('modal-opname').showModal()" class="btn btn-primary btn-sm min-h-11 gap-2">
+        <button type="button" onclick="document.getElementById('modal-opname').showModal()" class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold">
             <i data-lucide="plus" class="w-4 h-4"></i> Opname Baru
         </button>
     </x-slot:actions>
@@ -20,7 +20,7 @@
             @forelse($opnames as $opname)
                 <tr>
                     <td class="font-bold">{{ $opname->opname_date->format('d M Y') }}</td>
-                    <td><span class="badge {{ $opname->isCompleted() ? 'badge-success' : 'badge-warning' }} font-bold">{{ $opname->status->label() }}</span></td>
+                    <td><x-status-pill :tone="$opname->isCompleted() ? 'success' : 'warning'">{{ $opname->status->label() }}</x-status-pill></td>
                     <td class="text-right">{{ $opname->items_count }}</td>
                     <td class="text-xs">{{ $opname->creator?->name ?? '-' }}</td>
                     <td class="text-xs">{{ $opname->note ?? '-' }}</td>
@@ -49,7 +49,7 @@
         </x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Mulai</button>
+            <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold" data-requires-online>Mulai</button>
         </div>
     </form>
 </x-modal>

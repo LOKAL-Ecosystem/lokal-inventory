@@ -10,8 +10,8 @@
 
 <x-page-header title="Laporan" :subtitle="$report['title'] . ($usesPeriod ? ' · ' . $from->format('d M Y') . ' – ' . $to->format('d M Y') : '')">
     <x-slot:actions>
-        <a href="{{ route('reports.export', $query + ['format' => 'csv']) }}" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> CSV</a>
-        <a href="{{ route('reports.export', $query + ['format' => 'pdf']) }}" class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF</a>
+        <a href="{{ route('reports.export', $query + ['format' => 'csv']) }}" class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> CSV</a>
+        <a href="{{ route('reports.export', $query + ['format' => 'pdf']) }}" class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDF</a>
     </x-slot:actions>
 </x-page-header>
 
@@ -25,7 +25,7 @@
     </x-field>
     <x-field label="Dari" name="from"><input type="date" name="from" value="{{ $from->toDateString() }}" class="input w-full min-h-11 text-sm rounded-xl" /></x-field>
     <x-field label="Sampai" name="to"><input type="date" name="to" value="{{ $to->toDateString() }}" class="input w-full min-h-11 text-sm rounded-xl" /></x-field>
-    <button class="btn btn-neutral min-h-11">Tampilkan</button>
+    <button class="btn btn-neutral rounded-xl min-h-11 font-bold">Tampilkan</button>
 </form>
 
 <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">

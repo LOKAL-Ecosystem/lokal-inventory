@@ -46,7 +46,7 @@
                 @forelse($movements as $movement)
                     <tr>
                         <td class="text-xs whitespace-nowrap">{{ $movement->created_at->format('d M Y H:i') }}</td>
-                        <td><span class="badge {{ (float) $movement->qty >= 0 ? 'badge-success' : 'badge-warning' }} font-bold">{{ $movement->type->label() }}</span></td>
+                        <td><x-status-pill :tone="(float) $movement->qty >= 0 ? 'success' : 'warning'">{{ $movement->type->label() }}</x-status-pill></td>
                         <td class="text-right font-black {{ (float) $movement->qty >= 0 ? 'text-success' : 'text-error' }}">
                             {{ (float) $movement->qty > 0 ? '+' : '' }}{{ $ingredient->formatQty($movement->qty) }}
                         </td>

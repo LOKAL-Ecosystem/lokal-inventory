@@ -6,7 +6,7 @@
 <x-page-header title="Bahan Baku" subtitle="Stok saat ini dihitung dari ledger pergerakan. Stok negatif ditandai merah.">
     <x-slot:actions>
         @can('manage-inventory')
-            <button type="button" onclick="document.getElementById('modal-add').showModal()" class="btn btn-primary btn-sm min-h-11 gap-2">
+            <button type="button" onclick="document.getElementById('modal-add').showModal()" class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold">
                 <i data-lucide="plus" class="w-4 h-4"></i> Tambah Bahan
             </button>
         @endcan
@@ -25,7 +25,7 @@
         <input type="checkbox" name="low" value="1" class="checkbox checkbox-sm checkbox-primary" @checked(request()->boolean('low')) onchange="this.form.submit()" />
         Hampir habis
     </label>
-    <button class="btn btn-neutral min-h-11">Cari</button>
+    <button class="btn btn-neutral rounded-xl min-h-11 font-bold">Cari</button>
 </form>
 
 <div class="bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
@@ -57,10 +57,10 @@
                             <td class="text-right text-xs font-bold">Rp {{ rtrim(rtrim(number_format($item->avg_cost, 4, ',', '.'), '0'), ',') }} / {{ $item->base_unit->value }}</td>
                         @endcan
                         <td class="text-center">
-                            @if(! $item->is_active) <span class="badge badge-neutral">Nonaktif</span>
-                            @elseif($item->isNegative()) <span class="badge badge-error">Negatif</span>
-                            @elseif($item->isLow()) <span class="badge badge-warning">Hampir habis</span>
-                            @else <span class="badge badge-success">Aman</span> @endif
+                            @if(! $item->is_active) <x-status-pill>Nonaktif</x-status-pill>
+                            @elseif($item->isNegative()) <x-status-pill tone="error">Negatif</x-status-pill>
+                            @elseif($item->isLow()) <x-status-pill tone="warning">Hampir habis</x-status-pill>
+                            @else <x-status-pill tone="success">Aman</x-status-pill> @endif
                         </td>
                         @can('manage-inventory')
                             @php
@@ -105,7 +105,7 @@
             @include('ingredients._form', ['prefix' => 'add'])
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-                <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+                <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold">Simpan</button>
             </div>
         </form>
     </x-modal>
@@ -116,7 +116,7 @@
             @include('ingredients._form', ['prefix' => 'edit', 'withActive' => true])
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-                <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+                <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold">Simpan</button>
             </div>
         </form>
     </x-modal>

@@ -6,10 +6,10 @@
 <x-page-header title="Koneksi Lokal POS" subtitle="URL, API key, dan webhook secret dari Integrasi di Lokal POS. Rahasia disimpan terenkripsi.">
     <x-slot:actions>
         <form method="POST" action="{{ route('settings.test') }}">@csrf
-            <button class="btn btn-outline btn-sm min-h-11 gap-2"><i data-lucide="plug-zap" class="w-4 h-4"></i> Tes koneksi</button>
+            <button class="btn btn-outline rounded-lg btn-sm min-h-11 gap-2"><i data-lucide="plug-zap" class="w-4 h-4"></i> Tes koneksi</button>
         </form>
         <form method="POST" action="{{ route('settings.sync') }}">@csrf
-            <button class="btn btn-primary btn-sm min-h-11 gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkron katalog</button>
+            <button class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sinkron katalog</button>
         </form>
     </x-slot:actions>
 </x-page-header>
@@ -46,7 +46,7 @@
         <p class="text-base-content/60">Langganan event: <strong>order.confirmed</strong>, <strong>order.voided</strong>, dan <strong>catalog.updated</strong> (katalog dan ketersediaan menu).</p>
     </div>
 
-    <div class="flex justify-end"><button class="btn btn-primary min-h-11 px-8">Simpan</button></div>
+    <div class="flex justify-end"><button class="btn btn-primary rounded-xl min-h-11 px-8 font-bold">Simpan</button></div>
 </form>
 
 <form method="POST" action="{{ route('settings.webhook-url') }}" data-confirm="URL webhook lama akan berhenti berlaku sampai Anda menggantinya di Lokal POS. Lanjutkan?" class="flex justify-end">
@@ -68,7 +68,7 @@
                     <span class="text-xs text-base-content/60 ml-2">{{ $purpose }}</span>
                 </div>
                 @if($result)
-                    <span class="badge {{ $result['ok'] ? 'badge-success' : 'badge-error' }}" role="status">{{ $result['ok'] ? 'OK' : 'Gagal' }}</span>
+                    <x-status-pill :tone="$result['ok'] ? 'success' : 'error'" role="status">{{ $result['ok'] ? 'OK' : 'Gagal' }}</x-status-pill>
                     @unless($result['ok'])<span class="basis-full text-[11px] text-error">{{ $result['message'] }}</span>@endunless
                 @else
                     <span class="text-[11px] text-base-content/50">Belum dites</span>
@@ -90,11 +90,11 @@
                         <td><span class="font-mono text-xs font-bold bg-base-200 border border-base-300 px-2 py-0.5 rounded-md">{{ $event->event_type }}</span></td>
                         <td class="text-[11px] font-mono break-all max-w-xs">{{ $event->event_id }}</td>
                         <td>
-                            @if($event->processed_at) <span class="badge badge-success">Selesai</span>
+                            @if($event->processed_at) <x-status-pill tone="success">Selesai</x-status-pill>
                             @elseif($event->last_error)
-                                <span class="badge badge-error">Gagal ({{ $event->attempts }}×)</span>
+                                <x-status-pill tone="error">Gagal ({{ $event->attempts }}×)</x-status-pill>
                                 <div class="text-[11px] text-error mt-1 max-w-xs">{{ $event->last_error }}</div>
-                            @else <span class="badge badge-warning">Menunggu</span> @endif
+                            @else <x-status-pill tone="warning">Menunggu</x-status-pill> @endif
                         </td>
                         <td class="text-right">
                             @unless($event->processed_at)

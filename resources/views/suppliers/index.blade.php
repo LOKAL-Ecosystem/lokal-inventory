@@ -5,7 +5,7 @@
 @section('content')
 <x-page-header title="Supplier" subtitle="Pemasok bahan baku untuk pencatatan stok masuk.">
     <x-slot:actions>
-        <button type="button" onclick="document.getElementById('modal-add').showModal()" class="btn btn-primary btn-sm min-h-11 gap-2">
+        <button type="button" onclick="document.getElementById('modal-add').showModal()" class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold">
             <i data-lucide="plus" class="w-4 h-4"></i> Tambah Supplier
         </button>
     </x-slot:actions>
@@ -49,7 +49,7 @@
         <x-field label="Kontak" name="contact"><input type="text" name="contact" maxlength="255" placeholder="Telepon / WhatsApp" class="input w-full min-h-11 text-sm rounded-xl" /></x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+            <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold">Simpan</button>
         </div>
     </form>
 </x-modal>
@@ -61,7 +61,7 @@
         <x-field label="Kontak" name="contact"><input type="text" name="contact" maxlength="255" class="input w-full min-h-11 text-sm rounded-xl" /></x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11">Simpan</button>
+            <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold">Simpan</button>
         </div>
     </form>
 </x-modal>

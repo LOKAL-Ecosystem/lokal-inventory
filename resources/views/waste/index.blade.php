@@ -5,7 +5,7 @@
 @section('content')
 <x-page-header title="Bahan Terbuang (Waste)" subtitle="Catat bahan yang tumpah, rusak, kedaluwarsa, atau salah buat.">
     <x-slot:actions>
-        <button type="button" onclick="document.getElementById('modal-waste').showModal()" class="btn btn-primary btn-sm min-h-11 gap-2">
+        <button type="button" onclick="document.getElementById('modal-waste').showModal()" class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold">
             <i data-lucide="plus" class="w-4 h-4"></i> Catat Waste
         </button>
     </x-slot:actions>
@@ -23,7 +23,7 @@
                         <td class="text-xs whitespace-nowrap">{{ $movement->created_at->format('d M Y H:i') }}</td>
                         <td class="font-extrabold">{{ $movement->ingredient->name }}</td>
                         <td class="text-right font-black text-error">{{ $movement->ingredient->formatQty($movement->qty) }}</td>
-                        <td><span class="badge badge-warning font-bold">{{ $movement->reasonLabel() }}</span></td>
+                        <td><x-status-pill tone="warning">{{ $movement->reasonLabel() }}</x-status-pill></td>
                         <td class="text-xs">{{ $movement->note ?? '-' }}</td>
                         <td class="text-xs">{{ $movement->creator?->name ?? '-' }}</td>
                     </tr>
@@ -73,7 +73,7 @@
         </x-field>
         <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="this.closest('dialog').close()" class="btn btn-ghost min-h-11">Batal</button>
-            <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Simpan</button>
+            <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold" data-requires-online>Simpan</button>
         </div>
     </form>
 </x-modal>

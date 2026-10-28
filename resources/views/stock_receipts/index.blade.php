@@ -5,7 +5,7 @@
 @section('content')
 <x-page-header title="Stok Masuk" subtitle="Riwayat belanja bahan baku. Setiap belanja memperbarui stok dan biaya rata-rata.">
     <x-slot:actions>
-        <a href="{{ route('stock-receipts.create') }}" class="btn btn-primary btn-sm min-h-11 gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Catat Belanja</a>
+        <a href="{{ route('stock-receipts.create') }}" class="btn btn-primary rounded-lg btn-sm min-h-11 gap-2 font-bold"><i data-lucide="plus" class="w-4 h-4"></i> Catat Belanja</a>
     </x-slot:actions>
 </x-page-header>
 

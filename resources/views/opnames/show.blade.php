@@ -58,12 +58,12 @@
 
 @unless($completed)
     <div class="flex flex-wrap justify-end gap-3">
-        <button type="submit" form="count-form" class="btn btn-outline min-h-11" data-requires-online>Simpan Hitungan</button>
+        <button type="submit" form="count-form" class="btn btn-outline rounded-xl min-h-11" data-requires-online>Simpan Hitungan</button>
         @can('complete-opname')
             <form method="POST" action="{{ route('opnames.complete', $opname) }}" id="complete-form">
                 @csrf
                 <x-idempotency-token />
-                <button type="submit" class="btn btn-primary min-h-11" data-requires-online>Selesaikan Opname</button>
+                <button type="submit" class="btn btn-primary rounded-xl min-h-11 font-bold" data-requires-online>Selesaikan Opname</button>
             </form>
         @endcan
     </div>
