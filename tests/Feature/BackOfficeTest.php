@@ -214,3 +214,30 @@ it('nama dengan tanda kutip dan karakter non-ASCII aman di tombol ubah (Js::from
     $data = $argument($this->get('/suppliers')->assertOk()->getContent(), 'editSupplier');
     expect($data['name'])->toBe($name)->and($data['contact'])->toBe("Bu Ani's \"Toko\" — 0812");
 });
+
+it('dashboard menampilkan ringkasan dari ledger, dan kasir tidak menerima angka rupiah', function () {
+    $coffee = F::ingredient('Biji Kopi', 1000, cost: 200);
+    F::product(1, 'Americano');
+    F::recipe(1, [$coffee->id => 18]);
+    app(\App\Services\StockDeductionService::class)->processConfirmed(F::webhook('order.confirmed', 'ord-dash-1', [F::line(1, 2)])['data']);
+    app(\App\Services\StockService::class)->recordWaste($coffee->refresh(), 50, \App\Enums\WasteReason::Spilled);
+
+    $data = fn (\Illuminate\Testing\TestResponse $response) => json_decode(
+        \Illuminate\Support\Str::between($response->getContent(), '<script type="application/json" id="dashboard-data">', '</script>'), true
+    );
+
+    $owner = $data($this->actingAs($this->owner)->get('/?range=7')->assertOk()->assertSee('Margin terendah')->assertSee('Perkiraan stok habis'));
+    expect($owner['days'])->toBe(7)
+        ->and($owner['today']['orders'])->toBe(1)
+        ->and($owner['today']['usage_cost'])->toBe(7200)   // 36 g × Rp 200
+        ->and($owner['today']['waste_cost'])->toBe(10000)  // 50 g × Rp 200
+        ->and(collect($owner['flow'])->firstWhere('key', 'usage')['value'])->toBe(7200);
+
+    $cashierResponse = $this->actingAs($this->cashier)->get('/?range=99')->assertOk()->assertDontSee('Margin terendah');
+    $cashier = $data($cashierResponse);
+    expect($cashier['days'])->toBe(14)
+        ->and($cashier['today']['orders'])->toBe(1)
+        ->and($cashier['today'])->not->toHaveKey('usage_cost')
+        ->and($cashier['flow'][0])->not->toHaveKey('value')
+        ->and($cashierResponse->getContent())->not->toContain('7200');
+});

@@ -10,6 +10,7 @@ import {
     Bell,
     ChefHat,
     ClipboardCheck,
+    Coins,
     Edit2,
     Eye,
     EyeOff,
@@ -26,18 +27,24 @@ import {
     Plug,
     PlugZap,
     Plus,
+    Receipt,
     RefreshCw,
     ShieldCheck,
+    Table,
+    Timer,
     Trash2,
+    TrendingDown,
+    TrendingUp,
     Truck,
     User,
     X,
 } from 'lucide';
 
 const icons = {
-    AlertTriangle, ArrowDownLeft, ArrowLeft, BarChart3, Bell, ChefHat, ClipboardCheck, Edit2, Eye, EyeOff,
-    FileSpreadsheet, FileText, LayoutDashboard, Lock, LogIn, LogOut, Mail, Menu, Package, PackageSearch,
-    Plug, PlugZap, Plus, RefreshCw, ShieldCheck, Trash2, Truck, User, X,
+    AlertTriangle, ArrowDownLeft, ArrowLeft, BarChart3, Bell, ChefHat, ClipboardCheck, Coins, Edit2,
+    Eye, EyeOff, FileSpreadsheet, FileText, LayoutDashboard, Lock, LogIn, LogOut, Mail, Menu, Package,
+    PackageSearch, Plug, PlugZap, Plus, Receipt, RefreshCw, ShieldCheck, Table, Timer, Trash2,
+    TrendingDown, TrendingUp, Truck, User, X,
 };
 
 // Shared SweetAlert2 instance with the app's primary colour.
