@@ -33,6 +33,7 @@ class Outlet extends Model
         'webhook_secret' => 'encrypted',
         'last_catalog_sync_at' => 'datetime',
         'last_reconciled_at' => 'datetime',
+        'linked_at' => 'datetime',
     ];
 
     public function users(): HasMany
@@ -43,17 +44,5 @@ class Outlet extends Model
     public function hasPosConnection(): bool
     {
         return filled($this->pos_base_url) && filled($this->pos_api_key);
-    }
-
-    /**
-     * Rahasia tidak pernah ditampilkan utuh: hanya 4 karakter terakhir.
-     */
-    public static function mask(?string $secret): ?string
-    {
-        if (blank($secret)) {
-            return null;
-        }
-
-        return str_repeat('•', 8) . substr($secret, -4);
     }
 }

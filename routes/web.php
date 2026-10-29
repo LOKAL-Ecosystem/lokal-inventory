@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\SsoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\Link\OutletLinkController;
 use App\Http\Controllers\OpnameController;
 use App\Http\Controllers\RecipeController;
 use App\Http\Controllers\ReportController;
@@ -24,6 +26,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('webhooks/lokal-pos/{token}', LokalPosWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.lokal-pos.outlet');
 // URL lama tanpa token tetap berfungsi bagi langganan yang sudah terdaftar di POS.
 Route::post('webhooks/lokal-pos', LokalPosWebhookController::class)->middleware('throttle:webhooks')->name('webhooks.lokal-pos');
+
+// Penautan otomatis dari Lokal POS (kontrak v2.3): tanpa CSRF, bertanda tangan, idempoten pada pos_outlet_id.
+Route::post('link/outlets', OutletLinkController::class)->middleware(['throttle:link', 'link.signed'])->name('link.outlets');
+
+// Satu login dari Lokal POS: token sekali pakai 60 detik.
+Route::get('sso', SsoController::class)->middleware('throttle:30,1')->name('sso');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'create'])->name('login');
@@ -53,8 +61,6 @@ Route::middleware('auth')->group(function () {
         Route::get('recipes/{posProductId}/preview', [RecipeController::class, 'preview'])->whereNumber('posProductId')->name('recipes.preview');
 
         Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
-        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
-        Route::post('settings/webhook-url', [SettingsController::class, 'regenerateWebhookUrl'])->name('settings.webhook-url');
         Route::post('settings/test', [SettingsController::class, 'test'])->name('settings.test');
         Route::post('settings/sync', [SettingsController::class, 'sync'])->name('settings.sync');
         Route::post('settings/inbox/{inbox}/retry', [SettingsController::class, 'retry'])->name('settings.inbox.retry');

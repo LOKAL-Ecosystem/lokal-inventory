@@ -65,6 +65,25 @@
                     <p class="mt-1.5 text-sm text-base-content/60">Masuk untuk melanjutkan ke {{ 'Lokal Stock' }}.</p>
                 </div>
 
+                @if(session('error'))
+                    <p class="mb-5 text-sm font-semibold text-error bg-red-50 border border-red-200/60 rounded-xl px-4 py-3" role="alert">{{ session('error') }}</p>
+                @endif
+
+                @if($ssoUrl)
+                    <a href="{{ $ssoUrl }}" class="btn btn-primary w-full h-12 rounded-xl text-base font-bold gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
+                        <i data-lucide="log-in" class="w-5 h-5" aria-hidden="true"></i>
+                        Masuk lewat Lokal POS
+                    </a>
+                    <p class="mt-3 text-xs text-base-content/60 text-center lg:text-left">Pakai akun Lokal POS Anda; tidak perlu kata sandi lain.</p>
+                @endif
+
+                @if($ssoUrl && $passwordLogin)
+                    <div class="flex items-center gap-3 my-6 text-[10px] font-extrabold uppercase tracking-widest text-base-content/50">
+                        <span class="flex-1 border-t border-base-300"></span> Pengembangan lokal <span class="flex-1 border-t border-base-300"></span>
+                    </div>
+                @endif
+
+                @if($passwordLogin)
                 <form action="{{ route('login') }}" method="POST" class="space-y-5">
                     @csrf
 
@@ -105,6 +124,9 @@
                         Masuk
                     </button>
                 </form>
+                @elseif(! $ssoUrl)
+                    <p class="text-sm text-base-content/60" role="status">Masuk lewat menu <strong>Stok</strong> di Lokal POS.</p>
+                @endif
 
                 <p class="mt-8 flex items-center justify-center lg:justify-start gap-1.5 text-xs text-base-content/50">
                     <i data-lucide="shield-check" class="w-4 h-4"></i>

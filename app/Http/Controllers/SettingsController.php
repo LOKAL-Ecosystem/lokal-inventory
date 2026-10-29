@@ -5,18 +5,19 @@ namespace App\Http\Controllers;
 use App\Jobs\ProcessConfirmedOrder;
 use App\Jobs\ProcessVoidedOrder;
 use App\Jobs\SyncCatalogFromPos;
-use App\Models\Outlet;
 use App\Models\WebhookInbox;
 use App\Services\CatalogSyncService;
 use App\Services\LokalPosClient;
+use App\Support\LinkSignature;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
 
 /**
- * Pengaturan koneksi ke Lokal POS: URL, API key, webhook secret (disimpan terenkripsi,
- * hanya ditampilkan 4 karakter terakhir), tes koneksi, dan sinkron katalog manual.
+ * Koneksi ke Lokal POS: hanya status. URL, API key, dan webhook secret diisi otomatis oleh
+ * penautan dari POS (kontrak v2.3) dan tidak pernah ditampilkan. Tersisa: tes koneksi,
+ * sinkron katalog manual, dan proses ulang event webhook yang gagal.
  */
 class SettingsController extends Controller
 {
@@ -26,46 +27,11 @@ class SettingsController extends Controller
 
         return view('settings.edit', [
             'outlet' => $outlet,
-            'maskedKey' => Outlet::mask($outlet->pos_api_key),
-            'maskedSecret' => Outlet::mask($outlet->webhook_secret),
-            'webhookUrl' => $outlet->webhookUrl(),
+            'linkEnabled' => LinkSignature::enabled(),
             'scopes' => LokalPosClient::SCOPES,
+            'failedEvents' => WebhookInbox::whereNull('processed_at')->whereNotNull('last_error')->count(),
             'inbox' => WebhookInbox::latest('received_at')->latest('id')->limit(25)->get(),
         ]);
-    }
-
-    public function update(Request $request): RedirectResponse
-    {
-        $outlet = $request->user()->outlet;
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'pos_outlet_id' => ['nullable', 'integer', 'min:1', 'unique:outlets,pos_outlet_id,' . $outlet->id],
-            'pos_base_url' => ['nullable', 'url', 'max:255'],
-            'pos_api_key' => ['nullable', 'string', 'max:255'],
-            'webhook_secret' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        // Kolom rahasia yang dikosongkan berarti "tidak diubah".
-        foreach (['pos_api_key', 'webhook_secret'] as $secret) {
-            if (blank($data[$secret] ?? null)) {
-                unset($data[$secret]);
-            }
-        }
-
-        $outlet->update($data);
-
-        return back()->with('success', 'Pengaturan disimpan.');
-    }
-
-    /**
-     * Buat ulang token URL webhook (mis. URL bocor). URL lama berhenti berlaku; ganti di POS.
-     */
-    public function regenerateWebhookUrl(Request $request): RedirectResponse
-    {
-        $request->user()->outlet->forceFill(['webhook_token' => \Illuminate\Support\Str::random(40)])->save();
-
-        return back()->with('success', 'URL webhook dibuat ulang. Perbarui URL di Integrasi → Webhook keluar di Lokal POS.');
     }
 
     public function test(Request $request): RedirectResponse

@@ -138,22 +138,22 @@ it('pemilik dapat menyimpan resep dan penyesuaian opsi', function () {
     $this->getJson('/recipes/1/preview?modifier_ids[]=5')->assertOk()->assertJsonPath('usage.1.ingredient', 'Oat');
 });
 
-it('rahasia koneksi POS disimpan terenkripsi dan tidak ditampilkan utuh', function () {
-    $this->actingAs($this->owner)->put('/settings', [
-        'name' => 'Lokal Coffee',
-        'pos_base_url' => 'https://pos.contoh.com',
-        'pos_api_key' => 'lkl_super_rahasia_1234',
-        'webhook_secret' => 'whsec_abcdef9999',
-    ])->assertRedirect();
+it('pengaturan koneksi POS hanya menampilkan status, tanpa rahasia, URL, atau form', function () {
+    $this->outlet->forceFill(['pos_api_key' => 'lkl_super_rahasia_1234', 'webhook_secret' => 'whsec_abcdef9999'])->save();
 
     $raw = \DB::table('outlets')->where('id', $this->outlet->id)->first();
     expect($raw->pos_api_key)->not->toContain('lkl_super')->and($raw->webhook_secret)->not->toContain('whsec_abc');
 
-    $this->get('/settings')->assertOk()->assertDontSee('lkl_super_rahasia_1234')->assertSee('1234')->assertDontSee('whsec_abcdef9999');
+    $this->actingAs($this->owner)->get('/settings')->assertOk()
+        ->assertSee('Terhubung ke Lokal POS')
+        ->assertDontSee('lkl_super_rahasia_1234')->assertDontSee('1234')->assertDontSee('whsec_abcdef9999')
+        ->assertDontSee('name="pos_api_key"', false)->assertDontSee('name="webhook_secret"', false)
+        ->assertDontSee($this->outlet->webhook_token)
+        ->assertDontSee('Buat ulang URL webhook');
 
-    // Kosong = tidak diubah.
-    $this->put('/settings', ['name' => 'Lokal Coffee', 'pos_api_key' => '', 'webhook_secret' => ''])->assertRedirect();
-    expect(Outlet::find($this->outlet->id)->pos_api_key)->toBe('lkl_super_rahasia_1234');
+    // Rute pengubah koneksi sudah tidak ada.
+    $this->put('/settings', ['pos_api_key' => 'x'])->assertStatus(405);
+    $this->post('/settings/webhook-url')->assertNotFound();
 });
 
 it('tes koneksi dan sinkron katalog memakai API Lokal POS', function () {

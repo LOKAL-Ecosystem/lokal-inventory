@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Enums\WasteReason;
 use App\Models\Ingredient;
 use App\Models\IngredientCategory;
@@ -24,7 +25,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Riwayat stok demo untuk outlet Lokal Coffee: tiga minggu penjualan dari POS (potong stok,
+ * Riwayat stok demo untuk satu outlet (bawaan: Lokal Coffee, pos_outlet_id 1): tiga minggu penjualan dari POS (potong stok,
  * sebagian di-void), belanja rutin per supplier dengan harga yang naik-turun, waste harian,
  * dua opname selesai, dan satu opname draft hari ini.
  *
@@ -79,7 +80,7 @@ class InventoryDemoSeeder extends Seeder
 
     protected Carbon $realNow;
     protected Carbon $today;
-    /** @var Collection<string, User> */
+    /** @var Collection<int, User> */
     protected Collection $users;
     /** @var Collection<string, Supplier> */
     protected Collection $suppliers;
@@ -87,13 +88,22 @@ class InventoryDemoSeeder extends Seeder
     protected int $orders = 0;
     protected int $voids = 0;
 
+    /**
+     * Outlet dicari dari pos_outlet_id (DEMO_POS_OUTLET_ID, bawaan 1), jadi bisa juga mengisi outlet yang
+     * dibuat oleh penautan otomatis dari Lokal POS: php artisan db:seed --class=InventoryDemoSeeder
+     */
     public function run(): void
     {
-        $outlet = Outlet::where('name', 'Lokal Coffee')->first();
+        $posOutletId = (int) env('DEMO_POS_OUTLET_ID', 1);
+        $outlet = Outlet::where('pos_outlet_id', $posOutletId)->first();
 
         if (! $outlet) {
+            $this->command?->warn("Outlet dengan pos_outlet_id {$posOutletId} belum ada. Tautkan dari Lokal POS atau jalankan DatabaseSeeder.");
+
             return;
         }
+
+        (new DemoMasterData)->seed($outlet);
 
         app(CurrentOutlet::class)->run($outlet, function () {
             if (StockMovement::exists()) {
@@ -108,7 +118,7 @@ class InventoryDemoSeeder extends Seeder
 
             $this->realNow = now()->copy();
             $this->today = $this->realNow->copy()->startOfDay();
-            $this->users = User::where('outlet_id', app(CurrentOutlet::class)->id())->get()->keyBy('email');
+            $this->users = User::where('outlet_id', app(CurrentOutlet::class)->id())->where('is_active', true)->get();
             $this->suppliers = Supplier::all()->keyBy('name');
 
             try {
@@ -159,7 +169,7 @@ class InventoryDemoSeeder extends Seeder
         $minute = 0;
 
         $ingredients = Ingredient::where('is_active', true)->get()
-            ->groupBy(fn (Ingredient $i) => DatabaseSeeder::INGREDIENTS[$i->name][6]);
+            ->groupBy(fn (Ingredient $i) => DemoMasterData::INGREDIENTS[$i->name][6]);
 
         foreach ($ingredients as $supplierName => $group) {
             $items = [];
@@ -190,7 +200,7 @@ class InventoryDemoSeeder extends Seeder
                     'note' => $initial ? 'Stok awal' : ($supplierName === 'Pasar Induk - Bu Ani' ? 'Belanja pasar pagi' : 'Belanja rutin'),
                 ],
                 $items,
-                $this->user($initial ? 'admin@lokal.com' : null)->id,
+                $this->user($initial ? UserRole::Owner : null)?->id,
             );
         }
     }
@@ -200,7 +210,7 @@ class InventoryDemoSeeder extends Seeder
      */
     protected function price(string $ingredient, int $daysAgo): int
     {
-        $base = DatabaseSeeder::INGREDIENTS[$ingredient][5];
+        $base = DemoMasterData::INGREDIENTS[$ingredient][5];
         $trend = match ($ingredient) {
             'Susu Sapi', 'Oat Milk' => $daysAgo <= 10 ? 1.08 : 1.0,
             'Biji Kopi' => $daysAgo <= 7 ? 1.05 : 1.0,
@@ -247,7 +257,7 @@ class InventoryDemoSeeder extends Seeder
         $items = [];
 
         foreach ($lines as $line) {
-            [$name, , $price] = DatabaseSeeder::PRODUCTS[$line['product_id']];
+            [$name, , $price] = DemoMasterData::PRODUCTS[$line['product_id']];
             $items[] = [
                 'item_id' => ++$this->itemSeq,
                 'product_id' => $line['product_id'],
@@ -309,7 +319,7 @@ class InventoryDemoSeeder extends Seeder
     {
         $ids = [];
 
-        foreach (DatabaseSeeder::PRODUCTS[$productId][3] as $group) {
+        foreach (DemoMasterData::PRODUCTS[$productId][3] as $group) {
             $picked = match ($group) {
                 1 => [$this->weighted([1 => 75, 2 => 25])],                 // Regular / Large
                 2 => [$this->weighted([3 => 70, 4 => 22, 5 => 8])],         // gula
@@ -340,7 +350,7 @@ class InventoryDemoSeeder extends Seeder
                 mt_rand($min, $max),
                 $reason,
                 $note,
-                $this->user()->id,
+                $this->user()?->id,
             );
         }
     }
@@ -351,8 +361,8 @@ class InventoryDemoSeeder extends Seeder
     protected function completedOpname(Carbon $time, string $note, array $overrides): void
     {
         $this->at($time);
-        $owner = $this->user('admin@lokal.com');
-        $opname = app(OpnameService::class)->start($time->toDateString(), $note, $owner->id);
+        $owner = $this->user(UserRole::Owner);
+        $opname = app(OpnameService::class)->start($time->toDateString(), $note, $owner?->id);
         $counts = [];
 
         foreach ($opname->items()->with('ingredient')->get() as $item) {
@@ -361,7 +371,7 @@ class InventoryDemoSeeder extends Seeder
 
         app(OpnameService::class)->saveCounts($opname, $counts);
         $this->at($time->copy()->addMinutes(25));
-        app(OpnameService::class)->complete($opname, $owner->id);
+        app(OpnameService::class)->complete($opname, $owner?->id);
     }
 
     /**
@@ -385,7 +395,7 @@ class InventoryDemoSeeder extends Seeder
     protected function draftOpname(): void
     {
         $this->at($this->clampToNow($this->today->copy()->setTime(15, 0)));
-        $opname = app(OpnameService::class)->start($this->today->toDateString(), 'Opname bar (dicicil, belum selesai)', $this->user('kasir@lokal.com')->id);
+        $opname = app(OpnameService::class)->start($this->today->toDateString(), 'Opname bar (dicicil, belum selesai)', $this->user(UserRole::Cashier)?->id);
 
         $counts = [];
         foreach ($opname->items()->with('ingredient')->get() as $item) {
@@ -491,14 +501,20 @@ class InventoryDemoSeeder extends Seeder
         return IngredientCategory::whereIn('name', $names)->pluck('id')->all();
     }
 
-    protected function user(?string $email = null): User
+    /**
+     * Staf outlet yang mencatat. Tanpa peran: kasir lebih sering, sesekali pemilik.
+     * Null bila outlet belum punya staf (created_by boleh kosong).
+     */
+    protected function user(?UserRole $role = null): ?User
     {
-        if ($email) {
-            return $this->users[$email];
+        $role ??= mt_rand(1, 10) === 1 ? UserRole::Owner : UserRole::Cashier;
+        $candidates = $this->users->where('role', $role)->values();
+
+        if ($candidates->isEmpty()) {
+            $candidates = $this->users->values();
         }
 
-        // Stok masuk dan waste dicatat bergantian oleh kasir, sesekali oleh pemilik.
-        return $this->users[$this->weighted(['kasir@lokal.com' => 5, 'kasir2@lokal.com' => 4, 'admin@lokal.com' => 1])];
+        return $candidates->isEmpty() ? null : $candidates[mt_rand(0, $candidates->count() - 1)];
     }
 
     protected function at(Carbon $time): void

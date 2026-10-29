@@ -188,19 +188,10 @@ it('URL lama tanpa token tetap berfungsi', function () {
     expect((float) $this->coffee->fresh()->current_stock)->toBe(982.0);
 });
 
-it('pemilik melihat URL webhook outletnya dan bisa membuat ulang tokennya', function () {
-    $this->withoutVite();
-    $owner = F::user($this->outlet, \App\Enums\UserRole::Owner);
-    $old = $this->outlet->webhook_token;
+it('URL webhook outlet yang dikirim ke POS saat penautan menerima event', function () {
+    expect($this->outlet->webhookUrl())->toEndWith("/webhooks/lokal-pos/{$this->outlet->webhook_token}");
 
-    $this->actingAs($owner)->get('/settings')->assertSee("/webhooks/lokal-pos/{$old}", false);
-
-    $this->post('/settings/webhook-url')->assertSessionHas('success');
-    $new = $this->outlet->fresh()->webhook_token;
-
-    expect($new)->not->toBe($old);
-    postWebhook("/webhooks/lokal-pos/{$old}", F::webhook('order.confirmed', 'ord-tok-4', [F::line(12, 1)]))->assertStatus(401);
-    postWebhook("/webhooks/lokal-pos/{$new}", F::webhook('order.confirmed', 'ord-tok-5', [F::line(12, 1)]))->assertStatus(202);
+    postWebhook(parse_url($this->outlet->webhookUrl(), PHP_URL_PATH), F::webhook('order.confirmed', 'ord-tok-4', [F::line(12, 1)]))->assertStatus(202);
 });
 
 it('webhook dikecualikan dari CSRF, juga saat pengecekan CSRF aktif', function () {

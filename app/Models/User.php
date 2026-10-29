@@ -21,6 +21,11 @@ class User extends Authenticatable
         'role',
     ];
 
+    /** Sama dengan default kolom, supaya user yang baru dibuat langsung dianggap aktif. */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -30,6 +35,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'role' => UserRole::class,
+        'is_active' => 'boolean',
     ];
 
     public function outlet(): BelongsTo

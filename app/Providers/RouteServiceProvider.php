@@ -27,6 +27,9 @@ class RouteServiceProvider extends ServiceProvider
         // Penerima webhook: batas longgar per IP (POS mengirim dari satu alamat), hanya menahan banjir.
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(600)->by($request->ip()));
 
+        // Penautan outlet dari Lokal POS (bertanda tangan): jarang, cukup longgar untuk retry job.
+        RateLimiter::for('link', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });

@@ -64,6 +64,16 @@ Status pesanan di `lokal_pos`: `awaiting_payment` → `confirmed`, atau `cancell
 
 Keduanya ada di kontrak v2.1: `PATCH /api/v1/products/{id}/availability` (scope `catalog:availability`, body `{is_available, source: "inventory"}`; POS menjawab `{is_available, availability_source, applied}` dan tidak pernah menimpa tanda habis `manual`) dan `PUT /api/v1/stock-alerts` (scope `stock-alerts:write`, daftar **lengkap** `{alerts: [{key, name, current, min, unit}]}`, bukan selisih). Token API butuh empat scope: `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write` (halaman Koneksi POS menampilkan hasil tes per scope).
 
+### Penautan otomatis & satu login (kontrak v2.3)
+
+Pemilik cafe **tidak pernah** melihat atau mengisi token API, URL webhook, atau secret. Rincian protokol ada di `WEBHOOK_CONTRACT.md` milik `lokal_pos`; ringkasan sisi repo ini:
+
+- **Konfigurasi server** (diisi operator sekali, `config/lokal.php`): `LOKAL_LINK_SECRET` (**sama** di kedua app; kosong = penautan & satu login mati, app tetap jalan sendiri dengan login email/password), `LOKAL_POS_URL`, `LOKAL_LINK_VERIFY_SSL` (false hanya berlaku saat `APP_ENV=local`).
+- **Tanda tangan antar-app** (`App\Support\LinkSignature`, file sama di kedua repo): header `X-Lokal-Timestamp` (unix detik) dan `X-Lokal-Signature` = hex(HMAC-SHA256(timestamp + "." + body mentah, secret)); ditolak bila selisih waktu > 300 detik atau tanda tangan salah.
+- **Penautan outlet**: POS membuat API client & langganan webhook sistem untuk setiap outlet baru, lalu `POST /link/outlets` (tanpa CSRF, throttle, tanda tangan wajib) dengan `{pos_outlet_id, name, pos_base_url, api_token, webhook_secret, staff: [{pos_user_id, name, email, role, is_active}]}`. Inventory (`OutletLinkService`) meng-upsert outlet berdasarkan `pos_outlet_id` (rahasia terenkripsi, `linked_at`) dan user cermin berdasarkan (outlet, `pos_user_id`), lalu men-dispatch `SyncCatalogFromPos` + `ReconcileOrders`, dan menjawab `{inventory_outlet_id, webhook_url}` (URL webhook unik outlet). Akun lama di outlet yang sama dengan email sama dan belum tertaut diambil alih; bila email sudah dipakai outlet lain, user cermin memakai `pos{outlet}-{user}@users.lokal.invalid`.
+- **Satu login**: menu "Stok" di POS → `GET {LOKAL_INVENTORY_URL}/sso?token=...`, token = base64url(json) + "." + hex(HMAC-SHA256(base64url(json), secret)), payload `{pos_outlet_id, pos_user_id, name, email, role, is_active, exp, nonce}`, berlaku 60 detik. Inventory memverifikasi, menolak nonce yang sudah dipakai (cache sampai exp), memperbarui user cermin (nama/email/peran terbaru), menolak staf nonaktif, lalu login sesi. Halaman login = tombol "Masuk lewat Lokal POS" (`{LOKAL_POS_URL}/go/stock`); form password hanya saat `APP_ENV=local` atau penautan mati. Sidebar punya "Kembali ke POS"; keluar di Inventory hanya keluar dari Inventory.
+- **Staf nonaktif** (`users.is_active = false` dari POS): tidak bisa masuk, dan sesinya diputus pada request berikutnya (`EnsureUserIsActive`).
+
 ---
 
 ## 3. Tech stack (sama dengan `lokal_pos`)
@@ -72,7 +82,7 @@ Keduanya ada di kontrak v2.1: `PATCH /api/v1/products/{id}/availability` (scope 
 
 - **PHP ^8.4** (pengembangan: 8.5 di Herd): `enum` (backed enum string) dan constructor property promotion.
 - **Laravel 13**, dengan struktur aplikasi Laravel 10 yang **dipertahankan** (`app/Http/Kernel.php`, `app/Console/Kernel.php`, semua provider; bukan `bootstrap/app.php` ramping). **Sanctum 4**.
-- **Autentikasi**: session untuk web. Token ke `lokal_pos` memakai **API Client token** (`X-Api-Key`) per outlet.
+- **Autentikasi**: session untuk web, masuk lewat satu login dari `lokal_pos`. Token ke `lokal_pos` memakai **API Client token** (`X-Api-Key`) per outlet, dikirim otomatis saat penautan.
 - **HTTP client**: `Http::` (Guzzle) untuk memanggil `/api/v1` `lokal_pos`.
 - **Queue/event**: event, listener, dan job Laravel. Default `sync` di lokal; **produksi wajib `database` atau `redis`** dengan queue worker (pemrosesan webhook dan potong stok berjalan di queue).
 - **Scheduler**: sinkronisasi katalog berkala dan rekonsiliasi pesanan.
@@ -104,7 +114,7 @@ Upgrade framework selesai bersama `lokal_pos` (Laravel 10 → 13, PHP 8.4+; vers
 
 | Bagian            | Implementasi                                                                                                                                   |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Penerima webhook  | Rute `POST /webhooks/lokal-pos/{token}` (token unik per outlet di `outlets.webhook_token`, bisa dibuat ulang di Pengaturan; URL lama tanpa token tetap didukung dengan mencari lewat signature; tanpa CSRF): verifikasi signature → simpan ke `webhook_inbox` → balas 2xx cepat → proses di job               |
+| Penerima webhook  | Rute `POST /webhooks/lokal-pos/{token}` (token unik per outlet di `outlets.webhook_token`, URL-nya dikirim ke POS saat penautan otomatis; URL lama tanpa token tetap didukung dengan mencari lewat signature; tanpa CSRF): verifikasi signature → simpan ke `webhook_inbox` → balas 2xx cepat → proses di job               |
 | Pemroses pesanan  | Job `ProcessConfirmedOrder` / `ProcessVoidedOrder` yang memanggil Service `StockDeductionService`                                              |
 | Sinkron katalog   | Job `SyncCatalogFromPos` (dipicu webhook `catalog.updated` dan scheduler) → tabel cache `pos_products`, `pos_modifier_groups`, `pos_modifiers` |
 | Ketersediaan menu | Service `MenuAvailabilityService` menghitung porsi tersedia, lalu job `PushAvailabilityToPos`                                                  |
@@ -118,7 +128,7 @@ Upgrade framework selesai bersama `lokal_pos` (Laravel 10 → 13, PHP 8.4+; vers
 
 ### Autentikasi pengguna
 
-Belum diputuskan apakah memakai akun terpisah atau masuk lewat akun `lokal_pos` (lihat §11). Sampai diputuskan: session Laravel biasa, peran `owner` / `cashier` dengan arti yang sama seperti di `lokal_pos`. Buat lapisan autentikasi yang mudah diganti.
+Satu login lewat Lokal POS (§2, kontrak v2.3): `GET /sso` (`SsoController`) membuat sesi Laravel biasa untuk user cermin staf POS, peran `owner` / `cashier` dengan arti yang sama seperti di `lokal_pos`. Form email/password (`LoginController`) hanya untuk `APP_ENV=local` atau saat penautan mati.
 
 ---
 
@@ -126,8 +136,8 @@ Belum diputuskan apakah memakai akun terpisah atau masuk lewat akun `lokal_pos` 
 
 ### Koneksi & cache dari POS
 
-- `outlets`: nama, `pos_outlet_id`, `pos_base_url`, `pos_api_key` (**terenkripsi**), `webhook_secret` (**terenkripsi**), `last_catalog_sync_at`.
-- `users`: `outlet_id`, `role` (owner/cashier), nama, email, password.
+- `outlets`: nama, `pos_outlet_id` (unik), `pos_base_url`, `pos_api_key` (**terenkripsi**), `webhook_secret` (**terenkripsi**), `webhook_token`, `linked_at`, `last_catalog_sync_at`. Kolom koneksi diisi oleh penautan otomatis, tidak lewat UI.
+- `users`: `outlet_id`, `pos_user_id` (unik per outlet; user cermin staf POS), `role` (owner/cashier), `is_active`, nama, email, password (nullable: user cermin masuk lewat satu login).
 - `pos_products`: `pos_product_id`, nama, kategori, harga jual (integer rupiah), `is_available` (nilai terakhir dari POS), `availability_source` (`null` | `manual` | `inventory`, dari POS), `synced_at`. **Hanya cache, jangan diedit dari repo ini.**
 - `pos_modifier_groups`, `pos_modifiers`: `pos_modifier_id`, nama, `price_delta`, `synced_at`.
 - `webhook_inbox`: `event_id` (unik), `event_type`, `payload` (JSON), `received_at`, `processed_at`, `attempts`, `last_error`.
@@ -287,7 +297,7 @@ Semua tindakan yang mengubah stok mencatat `created_by`.
 | Stok opname | Buat opname, isi hitungan fisik, lihat selisih, selesaikan                                                                           |
 | Supplier    | CRUD sederhana                                                                                                                       |
 | Laporan     | Pergerakan stok, pemakaian bahan per periode, nilai stok, HPP & margin per menu, selisih opname. Ekspor CSV dan PDF                  |
-| Pengaturan  | Koneksi ke `lokal_pos` (URL, API key, webhook secret), tes koneksi, sinkron katalog manual                                           |
+| Pengaturan  | Status koneksi ke `lokal_pos` (tersambung otomatis; tanpa field URL/API key/secret), tes koneksi, sinkron katalog, event gagal + Coba lagi |
 
 UI: target tombol minimal 44 px (dipakai di tablet juga). Pencarian bahan cepat. Angka stok selalu ditampilkan dengan satuannya.
 
@@ -350,7 +360,7 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 - ~~**Kontrak `lokal_pos` untuk ketersediaan menu**~~ **Terjawab (v2.1)**: `PATCH /products/{id}/availability` dengan penanda `availability_source`.
 - ~~**Kontrak untuk peringatan stok minimum**~~ **Terjawab (v2.1)**: Inventory mendorong daftar lengkap lewat `PUT /stock-alerts`; POS hanya menyimpan dan menampilkan.
 - ~~**Isi payload webhook pesanan**~~ **Terjawab (v2/v2.1)**: payload memuat `items[]` lengkap (`item_id`, `product_id`, `quantity`, `modifiers[].modifier_id`); REST `GET /orders` memuat `modifier_id` juga. Pencocokan opsi lewat nama tinggal cadangan untuk POS lama. `catalog.updated` membawa `product_ids` terdampak.
-- **Autentikasi pengguna**: akun terpisah atau masuk lewat akun `lokal_pos` (SSO).
+- ~~**Autentikasi pengguna**~~ **Terjawab (v2.3)**: satu login lewat Lokal POS (token sekali pakai 60 detik, user cermin per staf POS); tidak ada akun terpisah. Lihat §2 "Penautan otomatis & satu login".
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
 - **Pemeriksaan paket langganan** (Pro) dilakukan di mana.
 - Hosting produksi: **belum diputuskan**. Driver queue: ~~database atau redis~~ **diputuskan: database** (worker via Supervisor + cron `schedule:run`, lihat README).

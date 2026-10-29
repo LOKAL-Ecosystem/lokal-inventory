@@ -22,6 +22,15 @@ npm run build
 php artisan test                  # SQLite in-memory (phpunit.xml), tidak menyentuh DB .env
 ```
 
+## Setup lokal bersama lokal-pos (Herd)
+1. Isi `.env` kedua repo dengan `LOKAL_LINK_SECRET` yang **sama**; lokal-pos: `LOKAL_INVENTORY_URL=http://lokal-inventory.test`, repo ini: `LOKAL_POS_URL=http://lokal-pos.test` (`LOKAL_LINK_VERIFY_SSL=false` bila memakai https Herd; hanya berlaku saat `APP_ENV=local`).
+2. lokal-pos: `php artisan migrate --seed`.
+3. Repo ini: `php artisan migrate --seed` (outlet demo `pos_outlet_id` 1 + riwayat stok).
+4. Jalankan worker di kedua repo (`php artisan queue:work database`), lalu di lokal-pos: `php artisan lokal:link-inventory --all`. Outlet 1 di sini diperbarui di tempat (token, secret, `linked_at`) dan akun demo dengan email sama diambil alih menjadi user cermin.
+5. Masuk lewat menu **Stok** di POS. Outlet lain yang baru ditautkan bisa diisi data demo: `DEMO_POS_OUTLET_ID=<id> php artisan db:seed --class=InventoryDemoSeeder`.
+
+Penautan & satu login (kontrak v2.3, CONTEXT.md §2): `POST /link/outlets` (`OutletLinkController` → `OutletLinkService`), `GET /sso` (`SsoController`), tanda tangan & token di `App\Support\LinkSignature` (file **sama** di lokal-pos). `LOKAL_LINK_SECRET` kosong = semuanya mati dengan tenang dan login email/password dipakai.
+
 ## Batasan kerja
 - Jangan ubah kontrak integrasi dengan lokal-pos (`WEBHOOK_CONTRACT.md` v2.1) dari sisi repo ini.
 - Semua perubahan stok hanya lewat Service (`StockService` adalah satu-satunya pintu tulis ledger); `stock_movements` append-only dan idempoten.

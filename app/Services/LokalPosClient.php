@@ -39,7 +39,9 @@ class LokalPosClient
         return Http::baseUrl(rtrim($this->outlet->pos_base_url, '/') . '/api/v1')
             ->withHeaders(['X-Api-Key' => $this->outlet->pos_api_key])
             ->acceptJson()
-            ->timeout((int) config('services.lokal_pos.timeout', 10));
+            ->timeout((int) config('services.lokal_pos.timeout', 10))
+            // Sertifikat lokal Herd: verifikasi SSL hanya boleh dimatikan saat APP_ENV=local.
+            ->withOptions(['verify' => config('lokal.link.verify_ssl') || ! app()->environment('local')]);
     }
 
     /**

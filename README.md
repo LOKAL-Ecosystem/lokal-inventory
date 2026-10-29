@@ -208,12 +208,15 @@ QUEUE_CONNECTION=database
 
 # Opsional
 LOKAL_POS_TIMEOUT=10
+
+# Penautan otomatis & satu login (sama dengan lokal-pos)
+LOKAL_LINK_SECRET=<string acak panjang, SAMA di kedua .env>
+LOKAL_POS_URL=https://pos.contoh.com
 ```
 
-Koneksi ke Lokal POS (URL, API key, webhook secret) **tidak** diatur lewat `.env`, melainkan per outlet di halaman **Koneksi POS** (disimpan terenkripsi).
-Isi URL webhook unik outlet yang tampil di halaman itu (`/webhooks/lokal-pos/{token}`) pada Integrasi → Webhook keluar di Lokal POS, dengan event `order.confirmed`, `order.voided`, dan `catalog.updated`; token API butuh scope `catalog:read`, `orders:read`, `catalog:availability`, `stock-alerts:write`.
+Koneksi ke Lokal POS **tersambung otomatis**: setiap outlet baru di Lokal POS menautkan dirinya ke `POST /link/outlets` (bertanda tangan dengan `LOKAL_LINK_SECRET`) dan mengirim token API, webhook secret, dan daftar staf; Inventory menjawab dengan URL webhook unik outlet. Pemilik tidak pernah mengisi URL, token, atau secret; halaman **Koneksi POS** hanya menampilkan status. Staf masuk lewat menu **Stok** di Lokal POS (satu login, `GET /sso`). Detail: CONTEXT.md §2 dan `WEBHOOK_CONTRACT.md` (v2.3) milik lokal-pos.
 
-Akun demo setelah `php artisan migrate --seed`: `admin@lokal.com` (pemilik) dan `kasir@lokal.com` (kasir), kata sandi `password`.
+Akun demo setelah `php artisan migrate --seed`: `admin@lokal.com` (pemilik), `kasir@lokal.com` dan `kasir2@lokal.com` (kasir), kata sandi `password` (login password hanya saat `APP_ENV=local` atau penautan mati).
 
 ---
 

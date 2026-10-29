@@ -14,5 +14,6 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'webhooks/lokal-pos',
         'webhooks/lokal-pos/*',
+        'link/outlets',
     ];
 }

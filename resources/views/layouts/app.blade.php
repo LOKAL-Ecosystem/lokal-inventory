@@ -5,6 +5,7 @@
     $lowStockList = \App\Models\Ingredient::lowStock()->orderByRaw('current_stock - min_stock')->limit(5)->get();
     $stuckEvents = \App\Models\WebhookInbox::whereNull('processed_at')->whereNotNull('last_error')->count();
     $notifCount = $lowStockCount + ($user->can('manage-inventory') ? $stuckEvents : 0);
+    $posUrl = config('lokal.link.pos_url') ?: $user->outlet?->pos_base_url;
 @endphp
 <!DOCTYPE html>
 <html lang="id" data-theme="lokal">
@@ -146,6 +147,16 @@
                     @can('manage-inventory')
                         <x-nav-link route="settings.edit" match="settings.*" icon="plug" label="Koneksi POS" />
                     @endcan
+                    @if($posUrl)
+                        {{-- Kembali ke Lokal POS (sesi POS tetap; keluar di sini hanya keluar dari Inventory). --}}
+                        <li class="mt-2">
+                            <a href="{{ $posUrl }}" data-tip="Kembali ke POS"
+                               class="is-drawer-close:tooltip is-drawer-close:tooltip-right is-drawer-close:justify-center rounded-xl gap-3 py-2.5 hover:bg-base-200">
+                                <i data-lucide="arrow-left" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
+                                <span class="is-drawer-close:hidden">Kembali ke POS</span>
+                            </a>
+                        </li>
+                    @endif
                 </ul>
 
                 <div class="p-4 border-t border-base-300 w-full flex flex-col gap-3 is-drawer-close:items-center shrink-0">
