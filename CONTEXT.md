@@ -10,7 +10,7 @@ Dokumen ini adalah konteks proyek untuk developer dan AI coding assistant yang b
 
 ## 1. Produk
 
-**Lokal** adalah SaaS untuk **cafe** yang terdiri dari tiga aplikasi: **Lokal POS** (kasir + back office), **Lokal Menu** (pemesanan mandiri lewat QR), dan **Lokal Stock**.
+**Lokal** adalah rangkaian web-app untuk **cafe** yang terdiri dari tiga aplikasi: **Lokal POS** (kasir + back office), **Lokal Menu** (pemesanan mandiri lewat QR), dan **Lokal Stock**.
 
 Repo ini adalah **Lokal Stock** (nama repo: `lokal-inventory`). Fungsinya mencatat bahan baku, **memotong stok otomatis sesuai resep** setiap kali menu terjual di Lokal POS, lalu menghitung **HPP dan margin per menu**.
 
@@ -27,7 +27,7 @@ Tujuan produk:
 
 **Prinsip selalu online**: seluruh ekosistem Lokal (POS, Lokal Menu, Lokal Stock) selalu online. Tidak ada mode offline, service worker, IndexedDB, atau penyimpanan transaksi di perangkat; detail perilaku saat jaringan lambat/putus ada di §9.
 
-Posisi di paket langganan: Lokal Stock masuk paket **Pro** (Dasar = POS + Menu). Di roadmap, Lokal Stock adalah **fase 3**.
+Model bisnis: **instalasi khusus per pelanggan**. Setiap cafe yang membeli mendapat instalasi sendiri (lokal-pos, plus lokal-inventory ini bila diambil sebagai modul tambahan) di subdomain dan database sendiri, disiapkan dan dirawat operator. Tidak ada pendaftaran mandiri, paket langganan, trial, atau billing di dalam aplikasi; jangan membangunnya. Multi-tenant (`outlet_id`) tetap dipakai karena satu instalasi bisa berisi beberapa cabang pelanggan yang sama. Di roadmap, Lokal Stock adalah **fase 3**.
 
 ---
 
@@ -362,7 +362,6 @@ Bahan baku, resep + penyesuaian kustomisasi, potong stok otomatis dari POS, void
 - ~~**Isi payload webhook pesanan**~~ **Terjawab (v2/v2.1)**: payload memuat `items[]` lengkap (`item_id`, `product_id`, `quantity`, `modifiers[].modifier_id`); REST `GET /orders` memuat `modifier_id` juga. Pencocokan opsi lewat nama tinggal cadangan untuk POS lama. `catalog.updated` membawa `product_ids` terdampak.
 - ~~**Autentikasi pengguna**~~ **Terjawab (v2.3)**: satu login lewat Lokal POS (token sekali pakai 60 detik, user cermin per staf POS); tidak ada akun terpisah. Lihat §2 "Penautan otomatis & satu login".
 - **HPP di laporan POS**: apakah POS menampilkan HPP/margin dari inventory, atau cukup di lokal-inventory.
-- **Pemeriksaan paket langganan** (Pro) dilakukan di mana.
 - Hosting produksi: **belum diputuskan**. Driver queue: ~~database atau redis~~ **diputuskan: database** (worker via Supervisor + cron `schedule:run`, lihat README).
 - ~~Kapan upgrade ke versi Laravel dan PHP~~ **Selesai**: Laravel 13, PHP ^8.4 (bersama `lokal_pos`).
 
